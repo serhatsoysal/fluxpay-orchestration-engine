@@ -1,0 +1,107 @@
+package com.fluxpay.billing.service;
+
+import com.fluxpay.billing.entity.Invoice;
+import com.fluxpay.billing.entity.InvoiceItem;
+import com.fluxpay.billing.repository.InvoiceItemRepository;
+import com.fluxpay.billing.repository.InvoiceRepository;
+import com.fluxpay.common.enums.InvoiceStatus;
+import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.security.context.TenantContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@Transactional
+public class InvoiceService {
+
+    private final InvoiceRepository invoiceRepository;
+    private final InvoiceItemRepository invoiceItemRepository;
+
+    public InvoiceService(
+            InvoiceRepository invoiceRepository,
+            InvoiceItemRepository invoiceItemRepository) {
+        this.invoiceRepository = invoiceRepository;
+        this.invoiceItemRepository = invoiceItemRepository;
+    }
+
+    public Invoice createInvoice(Invoice invoice, List<InvoiceItem> items) {
+        if (invoice.getInvoiceNumber() == null) {
+            invoice.setInvoiceNumber(generateInvoiceNumber());
+        }
+
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        for (InvoiceItem item : items) {
+            item.setInvoiceId(savedInvoice.getId());
+            invoiceItemRepository.save(item);
+        }
+
+        return savedInvoice;
+    }
+
+    @Transactional(readOnly = true)
+    public Invoice getInvoiceById(UUID id) {
+        return invoiceRepository.findById(id)
+                .filter(i -> i.getDeletedAt() == null)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Invoice> getInvoicesByCustomer(UUID customerId) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return invoiceRepository.findByTenantIdAndCustomerId(tenantId, customerId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Invoice> getInvoicesBySubscription(UUID subscriptionId) {
+        return invoiceRepository.findBySubscriptionId(subscriptionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InvoiceItem> getInvoiceItems(UUID invoiceId) {
+        return invoiceItemRepository.findByInvoiceId(invoiceId);
+    }
+
+    public Invoice finalizeInvoice(UUID id) {
+        Invoice invoice = getInvoiceById(id);
+        invoice.setStatus(InvoiceStatus.OPEN);
+        return invoiceRepository.save(invoice);
+    }
+
+    public Invoice markInvoiceAsPaid(UUID id) {
+        Invoice invoice = getInvoiceById(id);
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(Instant.now());
+        invoice.setAmountPaid(invoice.getTotal());
+        invoice.setAmountDue(0L);
+        return invoiceRepository.save(invoice);
+    }
+
+    public Invoice voidInvoice(UUID id) {
+        Invoice invoice = getInvoiceById(id);
+        invoice.setStatus(InvoiceStatus.VOID);
+        return invoiceRepository.save(invoice);
+    }
+
+    private String generateInvoiceNumber() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Invoice lastInvoice = invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(tenantId)
+                .orElse(null);
+
+        int nextNumber = 1;
+        if (lastInvoice != null) {
+            String lastNumber = lastInvoice.getInvoiceNumber().replaceAll("\\D+", "");
+            if (!lastNumber.isEmpty()) {
+                nextNumber = Integer.parseInt(lastNumber) + 1;
+            }
+        }
+
+        return String.format("INV-%06d", nextNumber);
+    }
+}
+
