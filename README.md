@@ -1,15 +1,15 @@
 # FluxPay Orchestration Engine
 
-[![Build Status](https://github.com/serhat/fluxpay-orchestration-engine/workflows/CI%20Pipeline/badge.svg)](https://github.com/serhat/fluxpay-orchestration-engine/actions)
-[![CodeQL](https://github.com/serhat/fluxpay-orchestration-engine/workflows/CodeQL%20Security%20Scan/badge.svg)](https://github.com/serhat/fluxpay-orchestration-engine/security/code-scanning)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=serhat_fluxpay-orchestration-engine&metric=alert_status)](https://sonarcloud.io/dashboard?id=serhat_fluxpay-orchestration-engine)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=serhat_fluxpay-orchestration-engine&metric=coverage)](https://sonarcloud.io/dashboard?id=serhat_fluxpay-orchestration-engine)
-[![codecov](https://codecov.io/gh/serhat/fluxpay-orchestration-engine/branch/master/graph/badge.svg)](https://codecov.io/gh/serhat/fluxpay-orchestration-engine)
+[![Build Status](https://github.com/serhatsoysal/fluxpay-orchestration-engine/workflows/CI%20Pipeline/badge.svg)](https://github.com/serhatsoysal/fluxpay-orchestration-engine/actions)
+[![CodeQL](https://github.com/serhatsoysal/fluxpay-orchestration-engine/workflows/CodeQL%20Security%20Scan/badge.svg)](https://github.com/serhatsoysal/fluxpay-orchestration-engine/security/code-scanning)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=serhatsoysal_fluxpay-orchestration-engine&metric=alert_status)](https://sonarcloud.io/dashboard?id=serhatsoysal_fluxpay-orchestration-engine)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=serhatsoysal_fluxpay-orchestration-engine&metric=coverage)](https://sonarcloud.io/dashboard?id=serhatsoysal_fluxpay-orchestration-engine)
+[![codecov](https://codecov.io/gh/serhatsoysal/fluxpay-orchestration-engine/branch/master/graph/badge.svg)](https://codecov.io/gh/serhatsoysal/fluxpay-orchestration-engine)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen)](https://spring.io/projects/spring-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Enterprise-grade SaaS subscription management and billing orchestration platform built with Java 21 and Spring Boot 3.4.
+Enterprise-grade SaaS subscription management and billing orchestration platform built with Java 21 and Spring Boot 3.4.5.
 
 ## Features
 
@@ -26,7 +26,7 @@ Enterprise-grade SaaS subscription management and billing orchestration platform
 ## Technology Stack
 
 - **Java 21** - Virtual threads for improved concurrency
-- **Spring Boot 3.4.1** - Application framework
+- **Spring Boot 3.4.5** - Application framework
 - **PostgreSQL 16+** - Primary database
 - **Redis** - Caching and session management
 - **Maven** - Build and dependency management
@@ -46,7 +46,7 @@ Enterprise-grade SaaS subscription management and billing orchestration platform
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/serhat/fluxpay-orchestration-engine.git
+git clone https://github.com/serhatsoysal/fluxpay-orchestration-engine.git
 cd fluxpay-orchestration-engine
 ```
 
@@ -192,6 +192,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Serhat - [@serhat](https://github.com/serhat)
+Serhat - [@serhatsoysal](https://github.com/serhatsoysal)
 
-Project Link: [https://github.com/serhat/fluxpay-orchestration-engine](https://github.com/serhat/fluxpay-orchestration-engine)
+Project Link: [https://github.com/serhatsoysal/fluxpay-orchestration-engine](https://github.com/serhatsoysal/fluxpay-orchestration-engine)
