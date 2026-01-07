@@ -27,6 +27,7 @@
         <module>fluxpay-subscription</module>
         <module>fluxpay-billing</module>
         <module>fluxpay-api</module>
+        <module>fluxpay-coverage-report</module>
     </modules>
 
     <properties>
