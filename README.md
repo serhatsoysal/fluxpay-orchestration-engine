@@ -9,63 +9,344 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen)](https://spring.io/projects/spring-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Enterprise-grade SaaS subscription management and billing orchestration platform built with Java 21 and Spring Boot 3.4.5.
+## 📋 Table of Contents
 
-## Features
+- [Overview](#overview)
+- [Project Purpose](#project-purpose)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Features](#features)
+- [System Flow](#system-flow)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Security](#security)
+- [Contributing](#contributing)
+- [License](#license)
 
-- Multi-tenant architecture with tenant isolation
-- JWT-based authentication and authorization
-- Product catalog with flexible pricing models (flat rate, per-unit, tiered)
-- Subscription lifecycle management (trial, active, canceled, paused)
-- Invoice generation and payment processing
-- PostgreSQL database with JPA/Hibernate
-- RESTful API with comprehensive error handling
-- Security scanning with CodeQL and Trivy
-- Code quality monitoring with SonarCloud
+## 🎯 Overview
 
-## Technology Stack
+**FluxPay Orchestration Engine** is an enterprise-grade, multi-tenant SaaS subscription management and billing orchestration platform designed to handle complex subscription business models with flexible pricing strategies, automated invoicing, and comprehensive tenant isolation.
 
-- **Java 21** - Virtual threads for improved concurrency
-- **Spring Boot 3.4.5** - Application framework
-- **PostgreSQL 16+** - Primary database
-- **Redis** - Caching and session management
-- **Maven** - Build and dependency management
-- **JUnit 5** - Testing framework
-- **Docker** - Containerization
+Built with modern Java technologies and following microservices architecture principles, FluxPay provides a robust foundation for SaaS businesses requiring scalable subscription management, automated billing cycles, and comprehensive payment processing capabilities.
 
-## Prerequisites
+## 🎯 Project Purpose
 
-- Java 21 or higher
-- Maven 3.8+
-- PostgreSQL 16+
-- Redis 7+
-- Docker (optional)
+FluxPay Orchestration Engine addresses the critical need for a comprehensive, enterprise-ready solution that:
 
-## Getting Started
+- **Orchestrates Complex Subscription Models**: Supports multiple pricing strategies (flat-rate, per-unit, tiered) with flexible billing cycles
+- **Ensures Tenant Isolation**: Implements strict multi-tenant architecture with data isolation at the application and database levels
+- **Automates Billing Operations**: Handles invoice generation, payment processing, and subscription lifecycle management automatically
+- **Provides Enterprise Security**: Implements JWT-based authentication, role-based access control, and comprehensive security scanning
+- **Enables Scalability**: Built with modern Java 21 features (virtual threads) and Spring Boot for high-performance, scalable applications
+- **Maintains Code Quality**: Integrated with SonarCloud, CodeQL, and Trivy for continuous code quality and security monitoring
 
-### 1. Clone the repository
+## 🏗️ Architecture
+
+### Architecture Overview
+
+FluxPay follows a **modular monolith architecture** with clear separation of concerns, enabling future migration to microservices if needed. The system is organized into domain-driven modules, each responsible for specific business capabilities.
+
+### Design Patterns
+
+- **Domain-Driven Design (DDD)**: Each module represents a bounded context with its own entities, services, and repositories
+- **Layered Architecture**: Clear separation between API, Service, Repository, and Entity layers
+- **Multi-Tenant Architecture**: Row-level security with tenant context isolation using ThreadLocal
+- **Repository Pattern**: Data access abstraction through Spring Data JPA repositories
+- **Service Layer Pattern**: Business logic encapsulation in service classes
+- **DTO Pattern**: Data transfer objects for API communication
+- **Exception Handling**: Centralized exception handling with custom exception hierarchy
+
+### Module Responsibilities
+
+| Module | Responsibility | Key Components |
+|--------|---------------|----------------|
+| **fluxpay-common** | Shared utilities, base entities, DTOs, enums, exceptions | BaseEntity, common exceptions, shared DTOs |
+| **fluxpay-security** | Authentication, authorization, tenant context | JWT service, SecurityConfig, TenantContext |
+| **fluxpay-tenant** | Tenant and user management | Tenant, User entities, TenantService |
+| **fluxpay-product** | Product catalog and pricing models | Product, Price, ProductFeature, ProductService |
+| **fluxpay-subscription** | Subscription lifecycle management | Subscription, SubscriptionItem, SubscriptionService |
+| **fluxpay-billing** | Invoice generation and payment processing | Invoice, InvoiceItem, Payment, BillingService |
+| **fluxpay-api** | REST API layer, controllers, main application | Controllers, DTOs, application configuration |
+
+### Data Flow Architecture
+
+```
+┌─────────────┐
+│   Client    │
+│  (Frontend) │
+└──────┬──────┘
+       │ HTTP/REST
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│              fluxpay-api (REST Layer)                    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │   Auth   │  │  Tenant  │  │ Product  │  ...        │
+│  │Controller│  │Controller│  │Controller│            │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘            │
+└───────┼─────────────┼──────────────┼──────────────────┘
+        │             │              │
+        ▼             ▼              ▼
+┌─────────────────────────────────────────────────────────┐
+│              Security Layer (JWT + Tenant Context)      │
+│  ┌──────────────┐  ┌──────────────────┐               │
+│  │ JWT Filter   │  │ Tenant Context   │               │
+│  │              │  │ (ThreadLocal)    │               │
+│  └──────┬───────┘  └────────┬─────────┘               │
+└─────────┼──────────────────┼──────────────────────────┘
+          │                  │
+          ▼                  ▼
+┌─────────────────────────────────────────────────────────┐
+│              Service Layer (Business Logic)              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │ Tenant   │  │ Product  │  │Subscription│           │
+│  │ Service  │  │ Service  │  │  Service  │  ...       │
+│  └────┬─────┘  └────┬─────┘  └────┬──────┘            │
+└───────┼─────────────┼──────────────┼──────────────────┘
+        │             │              │
+        ▼             ▼              ▼
+┌─────────────────────────────────────────────────────────┐
+│              Repository Layer (Data Access)             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │ Tenant   │  │ Product   │  │Subscription│           │
+│  │Repository│  │Repository│  │ Repository│  ...       │
+│  └────┬─────┘  └────┬─────┘  └────┬──────┘            │
+└───────┼─────────────┼──────────────┼──────────────────┘
+        │             │              │
+        ▼             ▼              ▼
+┌─────────────────────────────────────────────────────────┐
+│              Database Layer (PostgreSQL)                 │
+│  ┌──────────────────────────────────────┐              │
+│  │  Multi-Tenant Database with          │              │
+│  │  Row-Level Security (tenant_id)      │              │
+│  └──────────────────────────────────────┘              │
+└─────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────────┐
+│              Cache Layer (Redis)                         │
+│  ┌──────────────────────────────────────┐              │
+│  │  Session Management & Caching         │              │
+│  └──────────────────────────────────────┘              │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 💻 Technology Stack
+
+### Core Technologies
+
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| **Language** | Java | 21 | Core programming language with virtual threads support |
+| **Framework** | Spring Boot | 3.4.5 | Application framework and dependency injection |
+| **Database** | PostgreSQL | 16+ | Primary relational database with JSONB support |
+| **Cache** | Redis | 7+ | Session management and caching layer |
+| **Build Tool** | Maven | 3.8+ | Dependency management and build automation |
+
+### Spring Ecosystem
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Web** | Spring Web MVC | RESTful API development |
+| **Data** | Spring Data JPA | Database abstraction and repository pattern |
+| **Security** | Spring Security | Authentication and authorization |
+| **Validation** | Bean Validation | Input validation |
+| **Auditing** | JPA Auditing | Automatic timestamp management |
+
+### Security & Authentication
+
+| Technology | Purpose |
+|------------|---------|
+| **JWT (JSON Web Tokens)** | Stateless authentication with HS512 algorithm |
+| **BCrypt** | Password hashing with salt |
+| **Spring Security** | Security framework integration |
+| **CORS** | Cross-origin resource sharing configuration |
+
+### Development Tools
+
+| Tool | Purpose |
+|------|---------|
+| **Lombok** | Reduces boilerplate code |
+| **MapStruct** | Type-safe bean mapping |
+| **Hypersistence Utils** | Hibernate utilities for JSONB support |
+| **Spring Dotenv** | Environment variable management |
+
+### Testing & Quality
+
+| Tool | Purpose |
+|------|---------|
+| **JUnit 5** | Unit and integration testing |
+| **JaCoCo** | Code coverage analysis |
+| **Checkstyle** | Code style enforcement |
+| **SonarCloud** | Code quality and security analysis |
+| **CodeQL** | Security vulnerability scanning |
+| **Trivy** | Dependency vulnerability scanning |
+
+### DevOps & CI/CD
+
+| Tool | Purpose |
+|------|---------|
+| **GitHub Actions** | Continuous Integration and Deployment |
+| **Docker** | Containerization |
+| **Docker Compose** | Local development environment |
+| **Codecov** | Coverage reporting |
+
+## ✨ Features
+
+### Core Features
+
+- ✅ **Multi-Tenant Architecture**: Complete tenant isolation with row-level security
+- ✅ **JWT Authentication**: Stateless authentication with secure token management
+- ✅ **Flexible Pricing Models**: Support for flat-rate, per-unit, and tiered pricing
+- ✅ **Subscription Lifecycle**: Complete management of trial, active, canceled, and paused states
+- ✅ **Automated Invoicing**: Automatic invoice generation and payment processing
+- ✅ **RESTful API**: Comprehensive REST API with proper HTTP status codes
+- ✅ **Error Handling**: Centralized exception handling with meaningful error messages
+- ✅ **Data Validation**: Input validation using Bean Validation annotations
+- ✅ **Audit Trail**: Automatic tracking of creation and modification timestamps
+- ✅ **Soft Delete**: Logical deletion with recovery capability
+
+### Security Features
+
+- 🔒 **Password Hashing**: BCrypt with automatic salt generation
+- 🔒 **JWT Security**: HS512 algorithm with configurable expiration
+- 🔒 **SQL Injection Protection**: Parameterized queries via JPA
+- 🔒 **CORS Configuration**: Configurable cross-origin policies
+- 🔒 **Security Scanning**: Automated vulnerability detection with CodeQL and Trivy
+- 🔒 **Code Quality**: Continuous monitoring with SonarCloud
+
+### Operational Features
+
+- 🚀 **High Performance**: Java 21 virtual threads for improved concurrency
+- 🚀 **Scalability**: Modular architecture enabling horizontal scaling
+- 🚀 **Monitoring**: Integration with SonarCloud for code quality metrics
+- 🚀 **CI/CD**: Automated testing and deployment pipelines
+- 🚀 **Documentation**: Comprehensive API and project documentation
+
+## 🔄 System Flow
+
+### Subscription Creation Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as API Layer
+    participant Security as Security Layer
+    participant SubService as Subscription Service
+    participant ProdService as Product Service
+    participant BillingService as Billing Service
+    participant DB as Database
+    participant Redis as Cache
+
+    Client->>API: POST /api/subscriptions
+    API->>Security: Validate JWT Token
+    Security->>Security: Extract Tenant Context
+    Security-->>API: Authenticated Request
+    
+    API->>SubService: createSubscription()
+    SubService->>ProdService: validateProduct()
+    ProdService->>DB: Query Product
+    DB-->>ProdService: Product Data
+    ProdService-->>SubService: Product Valid
+    
+    SubService->>DB: Create Subscription
+    DB-->>SubService: Subscription Created
+    
+    SubService->>BillingService: generateInitialInvoice()
+    BillingService->>DB: Create Invoice
+    DB-->>BillingService: Invoice Created
+    BillingService-->>SubService: Invoice Generated
+    
+    SubService->>Redis: Cache Subscription
+    SubService-->>API: Subscription Response
+    API-->>Client: 201 Created
+```
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant AuthController
+    participant AuthService
+    participant UserRepository
+    participant DB as Database
+    participant JWTService
+    participant Redis
+
+    Client->>AuthController: POST /api/auth/login
+    AuthController->>AuthService: authenticate()
+    AuthService->>UserRepository: findByEmail()
+    UserRepository->>DB: Query User
+    DB-->>UserRepository: User Data
+    UserRepository-->>AuthService: User Found
+    
+    AuthService->>AuthService: validatePassword()
+    AuthService->>JWTService: generateToken()
+    JWTService-->>AuthService: JWT Token
+    
+    AuthService->>Redis: Store Session
+    AuthService-->>AuthController: Auth Response
+    AuthController-->>Client: 200 OK + JWT Token
+```
+
+### Multi-Tenant Data Isolation Flow
+
+```mermaid
+flowchart TD
+    A[Client Request] --> B{JWT Token Valid?}
+    B -->|No| C[401 Unauthorized]
+    B -->|Yes| D[Extract Tenant ID]
+    D --> E[Set Tenant Context<br/>ThreadLocal]
+    E --> F[Service Layer]
+    F --> G[Repository Layer]
+    G --> H[Add Tenant Filter<br/>WHERE tenant_id = ?]
+    H --> I[Database Query]
+    I --> J[Return Tenant-Specific Data]
+    J --> K[Clear Tenant Context]
+    K --> L[Response to Client]
+    
+    style B fill:#f9f,stroke:#333,stroke-width:2px
+    style E fill:#bbf,stroke:#333,stroke-width:2px
+    style H fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Java 21** or higher
+- **Maven 3.8+**
+- **PostgreSQL 16+**
+- **Redis 7+**
+- **Docker** (optional, for containerized setup)
+
+### Installation Steps
+
+#### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/serhatsoysal/fluxpay-orchestration-engine.git
 cd fluxpay-orchestration-engine
 ```
 
-### 2. Configure Environment
+#### 2. Configure Environment
 
-Copy the example environment file and configure your settings:
+Create a `.env` file in the root directory:
 
 ```bash
 cp .env.example .env
 ```
 
-**IMPORTANT: Generate a secure JWT secret before running the application**
+**Generate JWT Secret:**
 
-#### Linux/Mac:
+**Linux/Mac:**
 ```bash
 openssl rand -base64 64
 ```
 
-#### Windows PowerShell:
+**Windows PowerShell:**
 ```powershell
 $bytes = New-Object byte[] 64
 $rng = New-Object Security.Cryptography.RNGCryptoServiceProvider
@@ -73,25 +354,40 @@ $rng.GetBytes($bytes)
 [Convert]::ToBase64String($bytes)
 ```
 
-Update the `JWT_SECRET` value in your `.env` file with the generated key.
+Update the `JWT_SECRET` value in your `.env` file.
 
-### 3. Set up Database
+#### 3. Start Infrastructure Services
 
-Create a PostgreSQL database:
+Using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+This will start:
+- PostgreSQL on port `5432`
+- Redis on port `6379`
+
+#### 4. Create Database
+
+Connect to PostgreSQL and create the database:
 
 ```sql
 CREATE DATABASE fluxpay;
 ```
 
-Update database credentials in `.env` file.
+Update database credentials in `.env` file to match Docker Compose configuration:
+- `DB_USERNAME=postgres`
+- `DB_PASSWORD=postgres`
+- `DB_NAME=fluxpay`
 
-### 4. Build the Project
+#### 5. Build the Project
 
 ```bash
 mvn clean install
 ```
 
-### 5. Run the Application
+#### 6. Run the Application
 
 ```bash
 cd fluxpay-api
@@ -100,98 +396,261 @@ mvn spring-boot:run
 
 The API will be available at `http://localhost:8080`
 
-## API Endpoints
+### Verify Installation
+
+Test the health endpoint:
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+## 📚 API Documentation
+
+### Base URL
+
+```
+http://localhost:8080/api
+```
 
 ### Authentication
-- `POST /api/auth/login` - User login
+
+#### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9...",
+  "type": "Bearer",
+  "expiresIn": 86400000
+}
+```
 
 ### Tenant Management
-- `POST /api/tenants/register` - Register new tenant
-- `GET /api/tenants/{id}` - Get tenant details
-- `PUT /api/tenants/{id}` - Update tenant
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/tenants/register` | Register new tenant | No |
+| `GET` | `/api/tenants/{id}` | Get tenant details | Yes |
+| `PUT` | `/api/tenants/{id}` | Update tenant | Yes |
 
 ### Products
-- `POST /api/products` - Create product
-- `GET /api/products` - List products
-- `GET /api/products/{id}` - Get product details
-- `POST /api/products/{id}/prices` - Add price to product
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/products` | Create product | Yes |
+| `GET` | `/api/products` | List products | Yes |
+| `GET` | `/api/products/{id}` | Get product details | Yes |
+| `POST` | `/api/products/{id}/prices` | Add price to product | Yes |
 
 ### Subscriptions
-- `POST /api/subscriptions` - Create subscription
-- `GET /api/subscriptions/{id}` - Get subscription details
-- `POST /api/subscriptions/{id}/cancel` - Cancel subscription
-- `POST /api/subscriptions/{id}/pause` - Pause subscription
-- `POST /api/subscriptions/{id}/resume` - Resume subscription
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/subscriptions` | Create subscription | Yes |
+| `GET` | `/api/subscriptions/{id}` | Get subscription details | Yes |
+| `POST` | `/api/subscriptions/{id}/cancel` | Cancel subscription | Yes |
+| `POST` | `/api/subscriptions/{id}/pause` | Pause subscription | Yes |
+| `POST` | `/api/subscriptions/{id}/resume` | Resume subscription | Yes |
 
 ### Invoices
-- `GET /api/invoices/{id}` - Get invoice details
-- `GET /api/invoices/customer/{customerId}` - List customer invoices
-- `POST /api/invoices/{id}/finalize` - Finalize invoice
-- `POST /api/invoices/{id}/void` - Void invoice
 
-## Project Structure
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/invoices/{id}` | Get invoice details | Yes |
+| `GET` | `/api/invoices/customer/{customerId}` | List customer invoices | Yes |
+| `POST` | `/api/invoices/{id}/finalize` | Finalize invoice | Yes |
+| `POST` | `/api/invoices/{id}/void` | Void invoice | Yes |
+
+### Authentication Header
+
+For authenticated requests, include the JWT token in the Authorization header:
+
+```http
+Authorization: Bearer <your-jwt-token>
+```
+
+## 📁 Project Structure
 
 ```
 fluxpay-orchestration-engine/
-├── fluxpay-common/          # Shared utilities, DTOs, exceptions
-├── fluxpay-security/        # JWT authentication, tenant context
-├── fluxpay-tenant/          # Tenant and user management
-├── fluxpay-product/         # Product catalog and pricing
-├── fluxpay-subscription/    # Subscription lifecycle
-├── fluxpay-billing/         # Invoicing and payments
-└── fluxpay-api/            # REST controllers and main application
+├── fluxpay-common/              # Shared utilities and base components
+│   ├── entity/                  # BaseEntity with common fields
+│   ├── dto/                     # Shared DTOs
+│   ├── enums/                   # Common enumerations
+│   └── exception/               # Custom exception classes
+│
+├── fluxpay-security/            # Security and authentication
+│   ├── config/                  # Security configuration
+│   ├── jwt/                     # JWT token service
+│   └── context/                 # Tenant context management
+│
+├── fluxpay-tenant/              # Tenant and user management
+│   ├── entity/                  # Tenant, User entities
+│   ├── repository/              # Data access layer
+│   └── service/                 # Business logic
+│
+├── fluxpay-product/             # Product catalog and pricing
+│   ├── entity/                  # Product, Price, ProductFeature
+│   ├── repository/              # Product repositories
+│   └── service/                 # Product services
+│
+├── fluxpay-subscription/        # Subscription lifecycle
+│   ├── entity/                  # Subscription, SubscriptionItem
+│   ├── repository/              # Subscription repositories
+│   └── service/                 # Subscription services
+│
+├── fluxpay-billing/             # Invoicing and payments
+│   ├── entity/                  # Invoice, InvoiceItem, Payment
+│   ├── repository/              # Billing repositories
+│   └── service/                 # Billing services
+│
+├── fluxpay-api/                 # REST API layer
+│   ├── controller/              # REST controllers
+│   ├── dto/                     # API DTOs
+│   ├── exception/               # Exception handlers
+│   └── FluxPayApplication.java  # Main application class
+│
+├── fluxpay-coverage-report/     # Coverage aggregation module
+│
+├── .github/                     # GitHub workflows and templates
+│   └── workflows/               # CI/CD pipelines
+│
+├── docker-compose.yml           # Local development environment
+├── pom.xml                      # Root Maven POM
+├── checkstyle.xml               # Code style configuration
+├── sonar-project.properties     # SonarCloud configuration
+└── README.md                    # This file
 ```
 
-## Testing
+## 🛠️ Development
 
-Run all tests:
+### Running Tests
 
 ```bash
+# Run all tests
 mvn test
-```
 
-Generate coverage report:
-
-```bash
+# Run tests with coverage
 mvn clean test jacoco:report
+
+# View coverage report
+open fluxpay-coverage-report/target/site/jacoco-aggregate/index.html
 ```
 
-## Code Quality
+### Code Quality
 
-### Run Checkstyle
+#### Checkstyle
 
 ```bash
 mvn checkstyle:check
 ```
 
-### Run SonarCloud Analysis
+#### SonarCloud Analysis
 
-First, add `SONAR_TOKEN` to GitHub Secrets, then manually trigger the SonarCloud workflow from the Actions tab.
+SonarCloud analysis runs automatically on push to `master` or `development` branches. You can also trigger it manually from GitHub Actions.
 
-## Security
+### Building
 
-- JWT tokens with HS512 algorithm
-- BCrypt password hashing
-- SQL injection protection with JPA
-- CORS configuration
-- Security scanning with CodeQL and Trivy
+```bash
+# Clean and build
+mvn clean install
 
-**Never commit your `.env` file or production secrets to version control.**
+# Skip tests
+mvn clean install -DskipTests
 
-## Contributing
+# Build specific module
+cd fluxpay-api
+mvn clean install
+```
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Development with Docker
 
-## License
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+## 🔒 Security
+
+### Security Features
+
+- **JWT Authentication**: HS512 algorithm with configurable expiration
+- **Password Hashing**: BCrypt with automatic salt generation
+- **SQL Injection Protection**: Parameterized queries via JPA
+- **CORS Configuration**: Configurable cross-origin resource sharing
+- **Security Scanning**: Automated vulnerability detection
+- **Code Quality**: Continuous security monitoring
+
+### Security Best Practices
+
+1. **Never commit secrets**: The `.env` file is in `.gitignore`
+2. **Use strong JWT secrets**: Generate secure random keys
+3. **Regular updates**: Keep dependencies updated via Dependabot
+4. **Security scanning**: CodeQL and Trivy scans run on every push
+5. **Code review**: All changes require code review before merge
+
+### Security Scanning
+
+The project includes automated security scanning:
+
+- **CodeQL**: Static analysis for security vulnerabilities
+- **Trivy**: Dependency vulnerability scanning
+- **SonarCloud**: Code quality and security analysis
+- **Dependabot**: Automated dependency updates
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** following the code style guidelines
+4. **Run tests** (`mvn test`)
+5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+6. **Push to the branch** (`git push origin feature/amazing-feature`)
+7. **Open a Pull Request**
+
+### Code Style
+
+- Follow Java naming conventions
+- Use Checkstyle for code style validation
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+## 👤 Contact
 
-Serhat - [@serhatsoysal](https://github.com/serhatsoysal)
+**Serhat Soysal**
 
-Project Link: [https://github.com/serhatsoysal/fluxpay-orchestration-engine](https://github.com/serhatsoysal/fluxpay-orchestration-engine)
+- GitHub: [@serhatsoysal](https://github.com/serhatsoysal)
+- Project Link: [https://github.com/serhatsoysal/fluxpay-orchestration-engine](https://github.com/serhatsoysal/fluxpay-orchestration-engine)
+
+## 🙏 Acknowledgments
+
+- Spring Boot team for the excellent framework
+- PostgreSQL community for robust database support
+- All open-source contributors whose libraries make this project possible
+
+---
+
+**Made with ❤️ using Java 21 and Spring Boot 3.4.5**
