@@ -48,7 +48,7 @@
         <logback.version>1.5.19</logback.version>
         <redis.version>3.2.0</redis.version>
         <jwt.version>0.12.5</jwt.version>
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <hypersistence.version>3.7.0</hypersistence.version>
         <dotenv.version>3.0.0</dotenv.version>
