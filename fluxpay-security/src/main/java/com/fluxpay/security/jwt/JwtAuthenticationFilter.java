@@ -53,10 +53,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                UUID userId = jwtTokenProvider.getUserId(token);
-                UUID tenantId = jwtTokenProvider.getTenantId(token);
-                String role = jwtTokenProvider.getRole(token);
-                String sessionId = jwtTokenProvider.getSessionId(token);
+                UUID userId;
+                UUID tenantId;
+                String role;
+                String sessionId;
+                
+                try {
+                    userId = jwtTokenProvider.getUserId(token);
+                    tenantId = jwtTokenProvider.getTenantId(token);
+                    role = jwtTokenProvider.getRole(token);
+                    sessionId = jwtTokenProvider.getSessionId(token);
+                } catch (IllegalArgumentException e) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 SessionData session = null;
                 
@@ -96,19 +106,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
-                UUID userId = jwtTokenProvider.getUserId(token);
-                UUID tenantId = jwtTokenProvider.getTenantId(token);
-                String role = jwtTokenProvider.getRole(token);
-                
-                TenantContext.setCurrentTenant(tenantId);
-                
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userId,
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                );
-                
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                try {
+                    UUID userId = jwtTokenProvider.getUserId(token);
+                    UUID tenantId = jwtTokenProvider.getTenantId(token);
+                    String role = jwtTokenProvider.getRole(token);
+                    
+                    TenantContext.setCurrentTenant(tenantId);
+                    
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (IllegalArgumentException ex) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
         }
 
