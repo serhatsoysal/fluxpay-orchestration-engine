@@ -48,28 +48,44 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
         run: mvn clean verify
 
+      - name: Verify coverage report
+        run: |
+          echo "Checking for coverage report..."
+          if [ -f "fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml" ]; then
+            echo "✓ Coverage report found"
+            ls -lh fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml
+            echo "Coverage report first 20 lines:"
+            head -n 20 fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml
+          else
+            echo "✗ Coverage report not found at expected location"
+            echo "Searching for jacoco.xml files..."
+            find . -name "jacoco.xml" -type f 2>/dev/null || echo "No jacoco.xml files found"
+            echo "Listing fluxpay-coverage-report directory:"
+            ls -la fluxpay-coverage-report/target/site/ 2>/dev/null || echo "Target directory does not exist"
+            exit 1
+          fi
+
       - name: SonarCloud analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          SONAR_ARGS="-Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
+            -Dsonar.organization=serhatsoysal \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml \
+            -Dsonar.coverage.exclusions=**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/** \
+            -Dsonar.coverage.inclusions=**/service/**,**/repository/**,**/jwt/**,**/session/**"
+          
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            mvn sonar:sonar \
-              -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
-              -Dsonar.organization=serhatsoysal \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml \
+            mvn sonar:sonar $SONAR_ARGS \
               -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }} \
               -Dsonar.pullrequest.branch=${{ github.head_ref }} \
               -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
               -Dsonar.pullrequest.provider=GitHub \
               -Dsonar.pullrequest.github.repository=${{ github.repository }}
           else
-            mvn sonar:sonar \
-              -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
-              -Dsonar.organization=serhatsoysal \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml \
+            mvn sonar:sonar $SONAR_ARGS \
               -Dsonar.branch.name=${{ github.ref_name }}
           fi
 
