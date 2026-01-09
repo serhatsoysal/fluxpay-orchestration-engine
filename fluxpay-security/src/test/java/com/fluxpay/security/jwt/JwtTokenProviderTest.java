@@ -283,5 +283,56 @@ class JwtTokenProviderTest {
         JwtTokenProvider differentProvider = new JwtTokenProvider("different-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-512-algorithm", expiration);
         assertFalse(differentProvider.validateToken(token));
     }
+
+    @Test
+    void testValidateTokenWithEmptyToken() {
+        assertFalse(jwtTokenProvider.validateToken(""));
+    }
+
+    @Test
+    void testCreateTokenWithNullSessionId() {
+        String token = jwtTokenProvider.createToken(userId, tenantId, role, null);
+        assertNotNull(token);
+        assertNull(jwtTokenProvider.getSessionId(token));
+    }
+
+    @Test
+    void testGetExpirationDateWithInvalidToken() {
+        assertThrows(JwtException.class, () -> {
+            jwtTokenProvider.getExpirationDate("invalid.token");
+        });
+    }
+
+    @Test
+    void testTokenExpirationBoundary() {
+        JwtTokenProvider veryShortProvider = new JwtTokenProvider(secret, 1L);
+        String token = veryShortProvider.createToken(userId, tenantId, role);
+        
+        Date expirationDate = veryShortProvider.getExpirationDate(token);
+        assertNotNull(expirationDate);
+        assertTrue(expirationDate.getTime() > System.currentTimeMillis());
+    }
+
+    @Test
+    void testCreateTokenWithEmptySessionId() {
+        String token = jwtTokenProvider.createToken(userId, tenantId, role, "");
+        assertNotNull(token);
+        String extractedSessionId = jwtTokenProvider.getSessionId(token);
+        assertEquals("", extractedSessionId);
+    }
+
+    @Test
+    void testValidateTokenWithCorruptedToken() {
+        String token = jwtTokenProvider.createToken(userId, tenantId, role);
+        String corruptedToken = token.substring(0, token.length() - 5) + "XXXXX";
+        assertFalse(jwtTokenProvider.validateToken(corruptedToken));
+    }
+
+    @Test
+    void testGetSessionIdWithInvalidToken() {
+        assertThrows(JwtException.class, () -> {
+            jwtTokenProvider.getSessionId("invalid.token");
+        });
+    }
 }
 

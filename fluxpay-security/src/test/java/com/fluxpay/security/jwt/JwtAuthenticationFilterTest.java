@@ -239,5 +239,107 @@ class JwtAuthenticationFilterTest {
         verify(sessionSecurityService).recordSuspiciousActivity(existingSession, "Device fingerprint mismatch");
         verify(filterChain).doFilter(request, response);
     }
+
+    @Test
+    void testDoFilterInternalWithoutBearerPrefix() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("InvalidFormat " + token);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(jwtTokenProvider, never()).validateToken(anyString());
+    }
+
+    @Test
+    void testDoFilterInternalWithMissingTenantIdClaim() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+        when(sessionService.isTokenBlacklisted(token)).thenReturn(false);
+        when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
+        when(jwtTokenProvider.getTenantId(token)).thenThrow(new IllegalArgumentException("Missing tenantId"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void testDoFilterInternalWithMissingRoleClaim() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+        when(sessionService.isTokenBlacklisted(token)).thenReturn(false);
+        when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
+        when(jwtTokenProvider.getTenantId(token)).thenReturn(tenantId);
+        when(jwtTokenProvider.getRole(token)).thenThrow(new IllegalArgumentException("Missing role"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void testDoFilterInternalWithSessionCreationFailure() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+        when(sessionService.isTokenBlacklisted(token)).thenReturn(false);
+        when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
+        when(jwtTokenProvider.getTenantId(token)).thenReturn(tenantId);
+        when(jwtTokenProvider.getRole(token)).thenReturn(role);
+        when(jwtTokenProvider.getSessionId(token)).thenReturn(null);
+        when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
+        when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
+        when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenReturn("test-agent");
+        when(sessionService.createOrUpdateSession(any())).thenReturn(null);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertEquals(tenantId, TenantContext.getCurrentTenantId());
+    }
+
+    @Test
+    void testDoFilterInternalWithNullSessionId() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+        when(sessionService.isTokenBlacklisted(token)).thenReturn(false);
+        when(jwtTokenProvider.getUserId(token)).thenReturn(userId);
+        when(jwtTokenProvider.getTenantId(token)).thenReturn(tenantId);
+        when(jwtTokenProvider.getRole(token)).thenReturn(role);
+        when(jwtTokenProvider.getSessionId(token)).thenReturn(null);
+        when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
+        when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
+        when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
+        when(request.getHeader("User-Agent")).thenReturn("test-agent");
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(sessionService).createOrUpdateSession(any());
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void testDoFilterInternalWithEmptyAuthorizationHeader() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("");
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void testDoFilterInternalWithShortAuthorizationHeader() throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn("Bearer");
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
 }
+
 

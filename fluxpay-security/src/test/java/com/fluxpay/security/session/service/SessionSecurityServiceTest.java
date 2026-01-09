@@ -258,6 +258,68 @@ class SessionSecurityServiceTest {
 
         verify(rateLimitService, never()).isRateLimited(any(), any());
     }
+
+    @Test
+    void validateSession_ShouldReturnFalse_WhenSuspiciousActivityAndSecurityFlagsNotNull() {
+        testSession.getSecurityFlags().setSuspiciousActivity(true);
+        testSession.getSecurityFlags().setFailedAttempts(3);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void recordSuspiciousActivity_ShouldIncrementFailedAttempts() {
+        testSession.getSecurityFlags().setFailedAttempts(2);
+
+        sessionSecurityService.recordSuspiciousActivity(testSession, "Multiple failed attempts");
+
+        assertThat(testSession.getSecurityFlags().getFailedAttempts()).isEqualTo(3);
+        assertThat(testSession.getSecurityFlags().isSuspiciousActivity()).isTrue();
+        verify(sessionRepository).update(testSession);
+    }
+
+    @Test
+    void validateSessionCreation_ShouldLogAttempt() {
+        when(rateLimitService.isRateLimited(testSession.getIpAddress(), "session_creation")).thenReturn(false);
+
+        sessionSecurityService.validateSessionCreation(testSession);
+
+        verify(rateLimitService).isRateLimited(testSession.getIpAddress(), "session_creation");
+    }
+
+    @Test
+    void verifyDeviceFingerprint_ShouldReturnTrue_WhenSecurityPropertiesIsNull() {
+        when(sessionProperties.getSecurity()).thenReturn(null);
+
+        boolean result = sessionSecurityService.verifyDeviceFingerprint(testSession, testSession.getDeviceFingerprint());
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void validateSession_ShouldMarkSuspicious_WhenRateLimitExceeded() {
+        when(sessionRepository.isTokenBlacklisted(testSession.getAccessToken())).thenReturn(false);
+        when(rateLimitService.isRateLimited(testSession.getSessionId(), "session_requests")).thenReturn(true);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isFalse();
+        assertThat(testSession.getSecurityFlags().isSuspiciousActivity()).isTrue();
+        verify(sessionRepository).update(testSession);
+    }
+
+    @Test
+    void verifyDeviceFingerprint_ShouldReturnTrue_WhenBothFingerprintsMatch() {
+        String fingerprint = "test-fingerprint-123";
+        testSession.setDeviceFingerprint(fingerprint);
+
+        boolean result = sessionSecurityService.verifyDeviceFingerprint(testSession, fingerprint);
+
+        assertThat(result).isTrue();
+    }
 }
+
 
 
