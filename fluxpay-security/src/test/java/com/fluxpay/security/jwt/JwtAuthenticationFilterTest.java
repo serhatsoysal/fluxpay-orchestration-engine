@@ -92,6 +92,7 @@ class JwtAuthenticationFilterTest {
                 .tenantId(tenantId)
                 .build();
         when(sessionService.getSession(tenantId, userId, "session-123")).thenReturn(mockSession);
+        when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
         when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
