@@ -95,8 +95,10 @@ public class SessionSecurityService {
     }
 
     private void markSuspiciousActivity(SessionData session) {
-        session.getSecurityFlags().setSuspiciousActivity(true);
-        sessionRepository.update(session);
+        if (session != null && session.getSecurityFlags() != null) {
+            session.getSecurityFlags().setSuspiciousActivity(true);
+            sessionRepository.update(session);
+        }
     }
 }
 
