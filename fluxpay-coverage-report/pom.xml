@@ -15,6 +15,43 @@
     <packaging>pom</packaging>
     <name>FluxPay - Coverage Report Aggregation</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-tenant</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-product</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-subscription</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-billing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fluxpay</groupId>
+            <artifactId>fluxpay-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
