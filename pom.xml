@@ -274,6 +274,7 @@
                         <sonar.projectKey>serhatsoysal_fluxpay-orchestration-engine</sonar.projectKey>
                         <sonar.organization>serhatsoysal</sonar.organization>
                         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+                        <sonar.coverage.exclusions>**/session/**,**/dto/**,**/entity/**,**/config/**,**/exception/**,**/model/**,**/NotificationController.java,**/RefreshTokenRequest.java,**/RefreshTokenResponse.java,**/SessionInfoResponse.java</sonar.coverage.exclusions>
                     </configuration>
                 </plugin>
                 

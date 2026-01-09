@@ -102,7 +102,7 @@ public class SessionService {
     public SessionData refreshSession(String refreshToken, String deviceFingerprint) {
         SessionData session = sessionRepository.findByRefreshToken(refreshToken);
         
-        if (session == null || session.getRefreshTokenExpiresAt().isBefore(Instant.now())) {
+        if (session == null || session.getRefreshTokenExpiresAt() == null || session.getRefreshTokenExpiresAt().isBefore(Instant.now())) {
             throw new SessionExpiredException("Refresh token expired or invalid");
         }
         
