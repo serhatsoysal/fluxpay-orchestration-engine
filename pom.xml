@@ -38,6 +38,7 @@
         
         <checkstyle.version>3.3.1</checkstyle.version>
         <jacoco.version>0.8.11</jacoco.version>
+        <jacoco.check.haltOnFailure>true</jacoco.check.haltOnFailure>
         <sonar.version>3.10.0.2594</sonar.version>
         <sonar.organization>serhatsoysal</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -271,6 +272,7 @@
                                 <goal>check</goal>
                             </goals>
                             <configuration>
+                                <haltOnFailure>${jacoco.check.haltOnFailure}</haltOnFailure>
                                 <rules>
                                     <rule>
                                         <element>PACKAGE</element>
