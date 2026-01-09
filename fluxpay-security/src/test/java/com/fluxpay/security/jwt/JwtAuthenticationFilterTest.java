@@ -293,7 +293,7 @@ class JwtAuthenticationFilterTest {
         when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
-        when(sessionService.createOrUpdateSession(any())).thenReturn(null);
+        when(sessionService.createSession(any())).thenReturn(null);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -317,7 +317,7 @@ class JwtAuthenticationFilterTest {
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        verify(sessionService).createOrUpdateSession(any());
+        verify(sessionService).createSession(any());
         verify(filterChain).doFilter(request, response);
     }
 
