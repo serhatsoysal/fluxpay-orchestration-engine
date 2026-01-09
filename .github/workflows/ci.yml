@@ -32,6 +32,15 @@ jobs:
         continue-on-error: true
 
       - name: Run JaCoCo
+        env:
+          JWT_SECRET: test-secret-key-for-ci-cd-pipeline-min-512-bits-hs512-algorithm-requires-this-length
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: fluxpay_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: mvn clean verify
         continue-on-error: true
 
@@ -89,6 +98,15 @@ jobs:
         run: docker --version
 
       - name: Build with Maven
+        env:
+          JWT_SECRET: test-secret-key-for-ci-cd-pipeline-min-512-bits-hs512-algorithm-requires-this-length
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: fluxpay_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: mvn clean install -DskipTests
 
       - name: Run Tests
