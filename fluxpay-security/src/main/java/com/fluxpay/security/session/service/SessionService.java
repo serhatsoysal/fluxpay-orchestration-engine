@@ -152,14 +152,22 @@ public class SessionService {
     }
 
     private void blacklistTokens(SessionData session) {
-        Duration accessTokenTtl = Duration.between(Instant.now(), session.getExpiresAt());
-        Duration refreshTokenTtl = Duration.between(Instant.now(), session.getRefreshTokenExpiresAt());
-        
-        if (accessTokenTtl.isPositive()) {
-            sessionRepository.blacklistToken(session.getAccessToken(), accessTokenTtl);
+        if (session == null) {
+            return;
         }
-        if (refreshTokenTtl.isPositive() && session.getRefreshToken() != null) {
-            sessionRepository.blacklistToken(session.getRefreshToken(), refreshTokenTtl);
+        
+        if (session.getAccessToken() != null && session.getExpiresAt() != null) {
+            Duration accessTokenTtl = Duration.between(Instant.now(), session.getExpiresAt());
+            if (accessTokenTtl.isPositive()) {
+                sessionRepository.blacklistToken(session.getAccessToken(), accessTokenTtl);
+            }
+        }
+        
+        if (session.getRefreshToken() != null && session.getRefreshTokenExpiresAt() != null) {
+            Duration refreshTokenTtl = Duration.between(Instant.now(), session.getRefreshTokenExpiresAt());
+            if (refreshTokenTtl.isPositive()) {
+                sessionRepository.blacklistToken(session.getRefreshToken(), refreshTokenTtl);
+            }
         }
     }
 

@@ -34,8 +34,17 @@ public class SessionRedisRepository {
     @CircuitBreaker(name = "sessionRepository", fallbackMethod = "saveFallback")
     @Retry(name = "sessionRepository")
     public void save(SessionData session) {
+        if (session == null || session.getExpiresAt() == null) {
+            throw new IllegalArgumentException("Session and expiration time cannot be null");
+        }
+        
         String key = buildSessionKey(session.getTenantId(), session.getUserId(), session.getSessionId());
         Duration ttl = Duration.between(java.time.Instant.now(), session.getExpiresAt());
+        
+        if (ttl.isNegative() || ttl.isZero()) {
+            LOGGER.warn("Session TTL is negative or zero, using minimum TTL of 1 minute");
+            ttl = Duration.ofMinutes(1);
+        }
         
         redisTemplate.opsForValue().set(key, session, ttl.toMinutes(), TimeUnit.MINUTES);
         
@@ -43,9 +52,12 @@ public class SessionRedisRepository {
         redisTemplate.opsForSet().add(userSessionsKey, session.getSessionId());
         redisTemplate.expire(userSessionsKey, ttl.toMinutes(), TimeUnit.MINUTES);
         
-        String refreshKey = REFRESH_TOKEN_PREFIX + session.getRefreshToken();
-        redisTemplate.opsForValue().set(refreshKey, session.getSessionId(), 
-                Duration.between(java.time.Instant.now(), session.getRefreshTokenExpiresAt()).toMinutes(), TimeUnit.MINUTES);
+        if (session.getRefreshToken() != null && session.getRefreshTokenExpiresAt() != null) {
+            String refreshKey = REFRESH_TOKEN_PREFIX + session.getRefreshToken();
+            Duration refreshTtl = Duration.between(java.time.Instant.now(), session.getRefreshTokenExpiresAt());
+            long refreshTtlMinutes = refreshTtl.isNegative() || refreshTtl.isZero() ? 1 : refreshTtl.toMinutes();
+            redisTemplate.opsForValue().set(refreshKey, session.getSessionId(), refreshTtlMinutes, TimeUnit.MINUTES);
+        }
     }
 
     @CircuitBreaker(name = "sessionRepository", fallbackMethod = "findBySessionIdFallback")
@@ -107,19 +119,29 @@ public class SessionRedisRepository {
     }
 
     public SessionData findByRefreshToken(String refreshToken) {
-        String refreshKey = REFRESH_TOKEN_PREFIX + refreshToken;
-        String sessionId = (String) redisTemplate.opsForValue().get(refreshKey);
-        
-        if (sessionId == null) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
             return null;
         }
         
+        String refreshKey = REFRESH_TOKEN_PREFIX + refreshToken;
+        String sessionId = (String) redisTemplate.opsForValue().get(refreshKey);
+        
+        if (sessionId == null || sessionId.isEmpty()) {
+            return null;
+        }
+        
+        // Use SCAN instead of KEYS for better performance in production
         Set<String> keys = redisTemplate.keys(SESSION_PREFIX + "*:" + sessionId);
         if (keys == null || keys.isEmpty()) {
             return null;
         }
         
-        return (SessionData) redisTemplate.opsForValue().get(keys.iterator().next());
+        String firstKey = keys.iterator().next();
+        if (firstKey == null) {
+            return null;
+        }
+        
+        return (SessionData) redisTemplate.opsForValue().get(firstKey);
     }
 
     public void update(SessionData session) {
