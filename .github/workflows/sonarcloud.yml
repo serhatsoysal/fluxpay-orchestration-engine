@@ -66,10 +66,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn clean compile test-compile sonar:sonar \
+          mvn sonar:sonar \
             -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
             -Dsonar.organization=serhatsoysal \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml \
-            -DskipTests=true
+            -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml
 
