@@ -36,10 +36,8 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Build and analyze
+      - name: Build with tests and coverage
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -48,5 +46,20 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
-        run: mvn clean verify sonar:sonar -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine -Dsonar.organization=serhatsoysal -Dsonar.host.url=https://sonarcloud.io
+        run: mvn clean verify
+
+      - name: Verify coverage report exists
+        run: |
+          if [ ! -f "fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml" ]; then
+            echo "Coverage report not found! Listing fluxpay-coverage-report/target:"
+            ls -la fluxpay-coverage-report/target/ || echo "Target directory does not exist"
+            exit 1
+          fi
+          echo "Coverage report found at: fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml"
+
+      - name: SonarCloud analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn sonar:sonar -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine -Dsonar.organization=serhatsoysal -Dsonar.host.url=https://sonarcloud.io
 
