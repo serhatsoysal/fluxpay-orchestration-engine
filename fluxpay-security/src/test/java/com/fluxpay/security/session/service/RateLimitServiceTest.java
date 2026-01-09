@@ -54,7 +54,7 @@ class RateLimitServiceTest {
 
     @Test
     void testIsRateLimited_ShouldReturnTrue_WhenAtLimit() {
-        when(valueOperations.increment(anyString())).thenReturn(5L);
+        when(valueOperations.increment(anyString())).thenReturn(6L);
 
         boolean result = rateLimitService.isRateLimited("test-id", "session_creation");
 

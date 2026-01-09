@@ -14,6 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SecurityConfigTest {
@@ -50,6 +51,8 @@ class SecurityConfigTest {
         assertTrue(corsConfigurationSource instanceof UrlBasedCorsConfigurationSource);
         
         HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/api/test");
+        when(request.getContextPath()).thenReturn("");
         CorsConfiguration config = corsConfigurationSource.getCorsConfiguration(request);
         
         assertNotNull(config);

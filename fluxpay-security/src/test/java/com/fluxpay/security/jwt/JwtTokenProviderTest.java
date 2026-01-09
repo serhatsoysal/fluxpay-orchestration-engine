@@ -1,5 +1,6 @@
 package com.fluxpay.security.jwt;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,7 +90,7 @@ class JwtTokenProviderTest {
 
     @Test
     void testGetUserIdWithInvalidToken() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(JwtException.class, () -> {
             jwtTokenProvider.getUserId("invalid.token");
         });
     }
@@ -103,7 +104,7 @@ class JwtTokenProviderTest {
 
     @Test
     void testGetTenantIdWithInvalidToken() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(JwtException.class, () -> {
             jwtTokenProvider.getTenantId("invalid.token");
         });
     }
@@ -117,7 +118,7 @@ class JwtTokenProviderTest {
 
     @Test
     void testGetRoleWithInvalidToken() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(JwtException.class, () -> {
             jwtTokenProvider.getRole("invalid.token");
         });
     }

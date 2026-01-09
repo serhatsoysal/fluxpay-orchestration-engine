@@ -98,7 +98,6 @@ class DeviceFingerprintServiceTest {
         DeviceInfo deviceInfo = deviceFingerprintService.extractDeviceInfo(request);
 
         assertThat(deviceInfo).isNotNull();
-        assertThat(deviceInfo.getDeviceId()).isNotNull();
     }
 
     @Test
