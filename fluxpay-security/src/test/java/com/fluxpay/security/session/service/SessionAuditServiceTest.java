@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SessionAuditServiceTest {
@@ -83,6 +84,31 @@ class SessionAuditServiceTest {
         SessionAuditLog log = captor.getValue();
         assertThat(log.getEventType()).isEqualTo("SUSPICIOUS_LOGIN");
         assertThat(log.getDetails()).isEqualTo("IP change detected");
+    }
+
+    @Test
+    void serializeDeviceInfo_WithJsonProcessingException_ShouldFallbackToToString() throws Exception {
+        ArgumentCaptor<SessionAuditLog> captor = ArgumentCaptor.forClass(SessionAuditLog.class);
+        when(objectMapper.writeValueAsString(any())).thenThrow(new com.fasterxml.jackson.core.JsonProcessingException("Test exception") {});
+
+        sessionAuditService.logSessionCreated(testSession).get();
+
+        verify(auditRepository).save(captor.capture());
+        SessionAuditLog log = captor.getValue();
+        assertThat(log.getDeviceInfo()).isNotNull();
+    }
+
+    @Test
+    void serializeDeviceInfo_WithNullDeviceInfo_ShouldReturnEmptyString() throws Exception {
+        testSession.setDeviceInfo(null);
+        ArgumentCaptor<SessionAuditLog> captor = ArgumentCaptor.forClass(SessionAuditLog.class);
+        when(objectMapper.writeValueAsString(null)).thenThrow(new com.fasterxml.jackson.core.JsonProcessingException("Null value") {});
+
+        sessionAuditService.logSessionCreated(testSession).get();
+
+        verify(auditRepository).save(captor.capture());
+        SessionAuditLog log = captor.getValue();
+        assertThat(log.getDeviceInfo()).isEmpty();
     }
 }
 
