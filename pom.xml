@@ -54,6 +54,8 @@
         <hypersistence.version>3.7.0</hypersistence.version>
         <dotenv.version>3.0.0</dotenv.version>
         <jackson.version>2.16.1</jackson.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+        <ua-parser.version>1.6.1</ua-parser.version>
     </properties>
 
     <dependencyManagement>
@@ -142,7 +144,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>${project.parent.version}</version>
+                <version>3.4.5</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -186,6 +188,16 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ua-parser</groupId>
+                <artifactId>uap-java</artifactId>
+                <version>${ua-parser.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

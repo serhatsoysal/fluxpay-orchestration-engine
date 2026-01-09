@@ -28,7 +28,19 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+session:
+  ttl:
+    access-token: 1h
+    refresh-token: 30d
+  concurrent:
+    max-sessions: 5
+  security:
+    fingerprint-verification: true
+    anomaly-detection: true
+  audit:
+    retention-days: 365
 
 server:
   port: ${SERVER_PORT:8080}
@@ -44,4 +56,19 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      sessionRepository:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      sessionRepository:
+        maxAttempts: 3
+        waitDuration: 1s
 

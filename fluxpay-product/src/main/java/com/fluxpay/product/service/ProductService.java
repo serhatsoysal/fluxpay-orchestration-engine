@@ -1,6 +1,7 @@
 package com.fluxpay.product.service;
 
 import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.common.exception.ValidationException;
 import com.fluxpay.product.entity.Product;
 import com.fluxpay.product.repository.ProductRepository;
 import com.fluxpay.security.context.TenantContext;
@@ -21,13 +22,20 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        
+        if (productRepository.existsByTenantIdAndName(tenantId, product.getName())) {
+            throw new ValidationException("Product with name already exists: " + product.getName());
+        }
+        
         return productRepository.save(product);
     }
 
     @Transactional(readOnly = true)
     public Product getProductById(UUID id) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
         return productRepository.findById(id)
-                .filter(p -> p.getDeletedAt() == null)
+                .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
@@ -45,8 +53,12 @@ public class ProductService {
 
     public Product updateProduct(UUID id, Product updatedProduct) {
         Product product = getProductById(id);
+        UUID tenantId = TenantContext.getCurrentTenantId();
         
-        if (updatedProduct.getName() != null) {
+        if (updatedProduct.getName() != null && !product.getName().equals(updatedProduct.getName())) {
+            if (productRepository.existsByTenantIdAndNameExcludingId(tenantId, updatedProduct.getName(), id)) {
+                throw new ValidationException("Product with name already exists: " + updatedProduct.getName());
+            }
             product.setName(updatedProduct.getName());
         }
         if (updatedProduct.getDescription() != null) {

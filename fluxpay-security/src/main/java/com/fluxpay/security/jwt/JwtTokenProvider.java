@@ -25,6 +25,10 @@ public class JwtTokenProvider {
     }
 
     public String createToken(UUID userId, UUID tenantId, String role) {
+        return createToken(userId, tenantId, role, null);
+    }
+
+    public String createToken(UUID userId, UUID tenantId, String role, String sessionId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -32,6 +36,7 @@ public class JwtTokenProvider {
                 .subject(userId.toString())
                 .claim("tenantId", tenantId.toString())
                 .claim("role", role)
+                .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key, Jwts.SIG.HS512)
@@ -62,6 +67,14 @@ public class JwtTokenProvider {
 
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    public String getSessionId(String token) {
+        return getClaims(token).get("sessionId", String.class);
+    }
+
+    public Date getExpirationDate(String token) {
+        return getClaims(token).getExpiration();
     }
 
     private Claims getClaims(String token) {

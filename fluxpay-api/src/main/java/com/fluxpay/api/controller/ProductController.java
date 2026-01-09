@@ -60,5 +60,11 @@ public class ProductController {
         List<Price> prices = priceService.getActivePricesByProduct(productId);
         return ResponseEntity.ok(prices);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
 }
 

@@ -19,6 +19,7 @@
 - [System Flow](#system-flow)
 - [Getting Started](#getting-started)
 - [API Documentation](#api-documentation)
+- [Session Management](#session-management)
 - [Project Structure](#project-structure)
 - [Development](#development)
 - [Security](#security)
@@ -127,7 +128,11 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 ┌─────────────────────────────────────────────────────────┐
 │              Cache Layer (Redis)                         │
 │  ┌──────────────────────────────────────┐              │
-│  │  Session Management & Caching         │              │
+│  │  Enterprise Session Management       │              │
+│  │  - JWT + Refresh Tokens              │              │
+│  │  - Device Fingerprinting             │              │
+│  │  - Rate Limiting                     │              │
+│  │  - Token Blacklisting                │              │
 │  └──────────────────────────────────────┘              │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -141,8 +146,9 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 | **Language** | Java | 21 | Core programming language with virtual threads support |
 | **Framework** | Spring Boot | 3.4.5 | Application framework and dependency injection |
 | **Database** | PostgreSQL | 16+ | Primary relational database with JSONB support |
-| **Cache** | Redis | 7+ | Session management and caching layer |
+| **Cache** | Redis | 7+ | Enterprise session management, rate limiting, and caching |
 | **Build Tool** | Maven | 3.8+ | Dependency management and build automation |
+| **Resilience** | Resilience4j | 2.2.0 | Circuit breaker, retry patterns, and fault tolerance |
 
 ### Spring Ecosystem
 
@@ -159,8 +165,11 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 | Technology | Purpose |
 |------------|---------|
 | **JWT (JSON Web Tokens)** | Stateless authentication with HS512 algorithm |
+| **Redis Session Store** | Enterprise session management and token storage |
+| **Refresh Tokens** | Long-lived tokens with rotation for enhanced security |
 | **BCrypt** | Password hashing with salt |
 | **Spring Security** | Security framework integration |
+| **ua-parser** | Device fingerprinting for anomaly detection |
 | **CORS** | Cross-origin resource sharing configuration |
 
 ### Development Tools
@@ -171,6 +180,8 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 | **MapStruct** | Type-safe bean mapping |
 | **Hypersistence Utils** | Hibernate utilities for JSONB support |
 | **Spring Dotenv** | Environment variable management |
+| **Resilience4j** | Circuit breaker and retry patterns |
+| **ua-parser** | User agent parsing for device detection |
 
 ### Testing & Quality
 
@@ -197,7 +208,8 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 ### Core Features
 
 - ✅ **Multi-Tenant Architecture**: Complete tenant isolation with row-level security
-- ✅ **JWT Authentication**: Stateless authentication with secure token management
+- ✅ **Enterprise Session Management**: JWT + Redis hybrid with refresh token rotation
+- ✅ **Multi-Device Support**: Concurrent session limits with device tracking
 - ✅ **Flexible Pricing Models**: Support for flat-rate, per-unit, and tiered pricing
 - ✅ **Subscription Lifecycle**: Complete management of trial, active, canceled, and paused states
 - ✅ **Automated Invoicing**: Automatic invoice generation and payment processing
@@ -209,17 +221,26 @@ FluxPay follows a **modular monolith architecture** with clear separation of con
 
 ### Security Features
 
+- 🔒 **Enterprise Session Management**: JWT + Redis with refresh token rotation
+- 🔒 **Device Fingerprinting**: Browser and device tracking with anomaly detection
+- 🔒 **Token Blacklisting**: Invalidated tokens stored in Redis for security
+- 🔒 **Rate Limiting**: Redis-based rate limiting (5/min session creation, 1000/min requests)
+- 🔒 **Concurrent Session Control**: Maximum 5 active sessions per user
 - 🔒 **Password Hashing**: BCrypt with automatic salt generation
 - 🔒 **JWT Security**: HS512 algorithm with configurable expiration
 - 🔒 **SQL Injection Protection**: Parameterized queries via JPA
 - 🔒 **CORS Configuration**: Configurable cross-origin policies
 - 🔒 **Security Scanning**: Automated vulnerability detection with CodeQL and Trivy
+- 🔒 **Audit Logging**: Session lifecycle events stored in PostgreSQL
 - 🔒 **Code Quality**: Continuous monitoring with SonarCloud
 
 ### Operational Features
 
 - 🚀 **High Performance**: Java 21 virtual threads for improved concurrency
+- 🚀 **Fault Tolerance**: Resilience4j circuit breaker and retry patterns
 - 🚀 **Scalability**: Modular architecture enabling horizontal scaling
+- 🚀 **Redis Caching**: High-performance session and data caching
+- 🚀 **Async Operations**: Non-blocking audit logging and event processing
 - 🚀 **Monitoring**: Integration with SonarCloud for code quality metrics
 - 🚀 **CI/CD**: Automated testing and deployment pipelines
 - 🚀 **Documentation**: Comprehensive API and project documentation
@@ -263,32 +284,39 @@ sequenceDiagram
     API-->>Client: 201 Created
 ```
 
-### Authentication Flow
+### Authentication & Session Management Flow
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant AuthController
-    participant AuthService
-    participant UserRepository
+    participant UserService
+    participant SessionService
+    participant DeviceFingerprint
     participant DB as Database
     participant JWTService
     participant Redis
 
     Client->>AuthController: POST /api/auth/login
-    AuthController->>AuthService: authenticate()
-    AuthService->>UserRepository: findByEmail()
-    UserRepository->>DB: Query User
-    DB-->>UserRepository: User Data
-    UserRepository-->>AuthService: User Found
+    AuthController->>UserService: getUserByEmail()
+    UserService->>DB: Query User
+    DB-->>UserService: User Data
+    UserService->>UserService: verifyPassword()
     
-    AuthService->>AuthService: validatePassword()
-    AuthService->>JWTService: generateToken()
-    JWTService-->>AuthService: JWT Token
+    AuthController->>DeviceFingerprint: extractDeviceInfo()
+    DeviceFingerprint-->>AuthController: Device Info
     
-    AuthService->>Redis: Store Session
-    AuthService-->>AuthController: Auth Response
-    AuthController-->>Client: 200 OK + JWT Token
+    AuthController->>JWTService: createToken(sessionId)
+    JWTService-->>AuthController: JWT + Refresh Token
+    
+    AuthController->>SessionService: createSession()
+    SessionService->>SessionService: validateSessionCreation()<br/>(Rate Limiting)
+    SessionService->>SessionService: enforceConcurrentLimit()
+    SessionService->>Redis: Store Session Data
+    SessionService->>DB: Audit Log
+    SessionService-->>AuthController: Session Created
+    
+    AuthController-->>Client: 200 OK<br/>JWT + Refresh Token + Session Info
 ```
 
 ### Multi-Tenant Data Isolation Flow
@@ -430,9 +458,80 @@ Content-Type: application/json
 ```json
 {
   "token": "eyJhbGciOiJIUzUxMiJ9...",
-  "type": "Bearer",
-  "expiresIn": 86400000
+  "refreshToken": "550e8400-e29b-41d4-a716-1234567890",
+  "sessionId": "a7b8c9d0-e1f2-3g4h-5i6j-7k8l9m0n1o2p",
+  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "tenantId": "987fcdeb-51a0-12d3-b456-426614174000",
+  "role": "ADMIN",
+  "expiresIn": 3600000,
+  "refreshExpiresIn": 2592000000
 }
+```
+
+#### Refresh Token
+
+```http
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-1234567890"
+}
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "new-refresh-token-here",
+  "sessionId": "a7b8c9d0-e1f2-3g4h-5i6j-7k8l9m0n1o2p",
+  "expiresIn": 3600000,
+  "refreshExpiresIn": 2592000000
+}
+```
+
+#### Logout
+
+```http
+POST /api/auth/logout
+Authorization: Bearer <your-jwt-token>
+```
+
+**Response:** `204 No Content`
+
+#### Logout All Devices
+
+```http
+POST /api/auth/logout-all
+Authorization: Bearer <your-jwt-token>
+```
+
+**Response:** `204 No Content`
+
+#### Get Active Sessions
+
+```http
+GET /api/auth/sessions
+Authorization: Bearer <your-jwt-token>
+```
+
+**Response:**
+```json
+[
+  {
+    "sessionId": "a7b8c9d0-e1f2-3g4h-5i6j-7k8l9m0n1o2p",
+    "deviceInfo": {
+      "deviceType": "desktop",
+      "os": "Windows",
+      "osVersion": "10",
+      "browser": "Chrome",
+      "browserVersion": "120"
+    },
+    "ipAddress": "192.168.1.100",
+    "createdAt": "2025-01-09T10:30:00Z",
+    "lastAccess": "2025-01-09T12:45:00Z"
+  }
+]
 ```
 
 ### Tenant Management
@@ -479,6 +578,67 @@ For authenticated requests, include the JWT token in the Authorization header:
 Authorization: Bearer <your-jwt-token>
 ```
 
+## 🔐 Session Management
+
+FluxPay implements **enterprise-grade session management** with the following features:
+
+### Features
+
+- ✅ **JWT + Redis Hybrid**: Stateless JWT tokens with server-side session validation
+- ✅ **Refresh Token Rotation**: Automatic rotation of refresh tokens for enhanced security
+- ✅ **Device Fingerprinting**: Browser and device tracking using ua-parser
+- ✅ **Multi-Device Support**: Manage up to 5 concurrent sessions per user
+- ✅ **Token Blacklisting**: Invalidated tokens stored in Redis to prevent reuse
+- ✅ **Rate Limiting**: Redis-based rate limiting (5/min session creation, 1000/min requests)
+- ✅ **Anomaly Detection**: Geographic and device fingerprint anomaly detection
+- ✅ **Audit Logging**: All session events logged to PostgreSQL for compliance
+- ✅ **Circuit Breaker**: Resilience4j patterns for Redis failure handling
+- ✅ **Async Operations**: Non-blocking audit logging for high performance
+
+### Session Configuration
+
+Session behavior is configurable via `application.yml`:
+
+```yaml
+session:
+  ttl:
+    access-token: 1h        # Access token expiration
+    refresh-token: 30d      # Refresh token expiration
+  concurrent:
+    max-sessions: 5         # Maximum concurrent sessions per user
+  security:
+    fingerprint-verification: true  # Enable device fingerprint validation
+    anomaly-detection: true         # Enable anomaly detection
+  audit:
+    retention-days: 365     # Audit log retention period
+```
+
+### Frontend Integration
+
+For comprehensive frontend integration instructions, see [SESSION_MANAGEMENT_INTEGRATION.md](SESSION_MANAGEMENT_INTEGRATION.md) which includes:
+
+- API endpoint documentation
+- Request/response schemas
+- Token storage strategies
+- Automatic token refresh implementation
+- Device fingerprint generation
+- Error handling patterns
+- Complete code examples for React/TypeScript
+
+### Database Tables
+
+The session management system uses the following PostgreSQL tables:
+
+- **session_audit_logs**: Session lifecycle events and security events
+- **session_events**: Detailed event tracking for analytics
+
+Session data is stored in Redis with automatic expiration and the following key patterns:
+
+- `session:{tenantId}:{userId}:{sessionId}` - Session data
+- `blacklist:{token}` - Blacklisted tokens
+- `user_sessions:{tenantId}:{userId}` - User's active sessions
+- `refresh:{refreshToken}` - Refresh token mapping
+
 ## 📁 Project Structure
 
 ```
@@ -489,9 +649,15 @@ fluxpay-orchestration-engine/
 │   ├── enums/                   # Common enumerations
 │   └── exception/               # Custom exception classes
 │
-├── fluxpay-security/            # Security and authentication
+├── fluxpay-security/            # Security and session management
 │   ├── config/                  # Security configuration
 │   ├── jwt/                     # JWT token service
+│   ├── session/                 # Enterprise session management
+│   │   ├── model/              # Session data models
+│   │   ├── entity/             # Session audit entities
+│   │   ├── repository/         # Session repositories (Redis + JPA)
+│   │   ├── service/            # Session services
+│   │   └── config/             # Session configuration
 │   └── context/                 # Tenant context management
 │
 ├── fluxpay-tenant/              # Tenant and user management
@@ -590,11 +756,18 @@ docker-compose down
 
 ### Security Features
 
+- **Enterprise Session Management**: JWT + Redis hybrid with refresh token rotation
+- **Device Fingerprinting**: Browser and OS detection with anomaly alerts
+- **Token Blacklisting**: Redis-based token invalidation
+- **Rate Limiting**: Configurable rate limits per operation
+- **Concurrent Session Control**: Automatic oldest session eviction
 - **JWT Authentication**: HS512 algorithm with configurable expiration
 - **Password Hashing**: BCrypt with automatic salt generation
 - **SQL Injection Protection**: Parameterized queries via JPA
 - **CORS Configuration**: Configurable cross-origin resource sharing
 - **Security Scanning**: Automated vulnerability detection
+- **Audit Logging**: GDPR-compliant session event tracking
+- **Fault Tolerance**: Circuit breaker and retry patterns
 - **Code Quality**: Continuous security monitoring
 
 ### Security Best Practices
