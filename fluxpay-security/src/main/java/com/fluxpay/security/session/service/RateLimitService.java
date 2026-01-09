@@ -18,12 +18,13 @@ public class RateLimitService {
     public boolean isRateLimited(String identifier, String operation) {
         String key = "ratelimit:" + operation + ":" + identifier;
         Long count = redisTemplate.opsForValue().increment(key);
+        long countValue = (count != null ? count : 0L);
         
-        if (count == 1) {
+        if (countValue == 1L) {
             redisTemplate.expire(key, getRateLimitWindow(operation), TimeUnit.SECONDS);
         }
         
-        return count != null && count > getRateLimit(operation);
+        return countValue > getRateLimit(operation);
     }
 
     private int getRateLimit(String operation) {

@@ -112,7 +112,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
+    public ResponseEntity<Void> logout() {
         UUID userId = getCurrentUserId();
         UUID tenantId = TenantContext.getCurrentTenantId();
         String sessionId = extractSessionId();

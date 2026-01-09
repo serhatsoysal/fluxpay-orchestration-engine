@@ -3,6 +3,8 @@ package com.fluxpay.security.session.repository;
 import com.fluxpay.security.session.model.SessionData;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 @Repository
 public class SessionRedisRepository {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionRedisRepository.class);
 
     private static final String SESSION_PREFIX = "session:";
     private static final String BLACKLIST_PREFIX = "blacklist:";
@@ -123,9 +127,14 @@ public class SessionRedisRepository {
     }
 
     private void saveFallback(SessionData session, Exception ex) {
+        LOGGER.warn("Session save fallback invoked for session: {} due to exception: {}", 
+                session != null ? session.getSessionId() : "null", ex.getMessage());
     }
 
+    @SuppressWarnings("unused")
     private SessionData findBySessionIdFallback(UUID tenantId, UUID userId, String sessionId, Exception ex) {
+        LOGGER.warn("Session find fallback invoked for tenantId: {}, userId: {}, sessionId: {} due to exception: {}", 
+                tenantId, userId, sessionId, ex.getMessage());
         return null;
     }
 
