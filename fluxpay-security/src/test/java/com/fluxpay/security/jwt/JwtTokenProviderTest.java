@@ -193,5 +193,94 @@ class JwtTokenProviderTest {
             jwtTokenProvider.getRole(tokenWithEmptyRole);
         });
     }
+
+    @Test
+    void testGetUserIdWithInvalidUuidFormat() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String tokenWithInvalidUuid = Jwts.builder()
+                .subject("invalid-uuid-format")
+                .claim("tenantId", tenantId.toString())
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            jwtTokenProvider.getUserId(tokenWithInvalidUuid);
+        });
+    }
+
+    @Test
+    void testGetTenantIdWithInvalidUuidFormat() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String tokenWithInvalidUuid = Jwts.builder()
+                .subject(userId.toString())
+                .claim("tenantId", "invalid-uuid-format")
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            jwtTokenProvider.getTenantId(tokenWithInvalidUuid);
+        });
+    }
+
+    @Test
+    void testGetUserIdWithNullSubject() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String tokenWithNullSubject = Jwts.builder()
+                .claim("tenantId", tenantId.toString())
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            jwtTokenProvider.getUserId(tokenWithNullSubject);
+        });
+    }
+
+    @Test
+    void testGetTenantIdWithNullTenantId() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String tokenWithNullTenantId = Jwts.builder()
+                .subject(userId.toString())
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            jwtTokenProvider.getTenantId(tokenWithNullTenantId);
+        });
+    }
+
+    @Test
+    void testGetRoleWithNullRole() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        String tokenWithNullRole = Jwts.builder()
+                .subject(userId.toString())
+                .claim("tenantId", tenantId.toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
+                .compact();
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            jwtTokenProvider.getRole(tokenWithNullRole);
+        });
+    }
+
+    @Test
+    void testValidateTokenWithWrongSecret() {
+        String token = jwtTokenProvider.createToken(userId, tenantId, role);
+        JwtTokenProvider differentProvider = new JwtTokenProvider("different-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-512-algorithm", expiration);
+        assertFalse(differentProvider.validateToken(token));
+    }
 }
 
