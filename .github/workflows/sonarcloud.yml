@@ -56,10 +56,19 @@ jobs:
             exit 1
           fi
           echo "Coverage report found at: fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml"
+          echo "Coverage report size:"
+          ls -lh fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml
+          echo "First 50 lines of coverage report:"
+          head -n 50 fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml || echo "Could not read coverage report"
 
       - name: SonarCloud analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn sonar:sonar -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine -Dsonar.organization=serhatsoysal -Dsonar.host.url=https://sonarcloud.io
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
+            -Dsonar.organization=serhatsoysal \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml
 
