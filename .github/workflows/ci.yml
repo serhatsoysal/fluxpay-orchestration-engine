@@ -33,14 +33,14 @@ jobs:
 
       - name: Run JaCoCo
         env:
-          JWT_SECRET: test-secret-key-for-ci-cd-pipeline-min-512-bits-hs512-algorithm-requires-this-length
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: fluxpay_test
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
         run: mvn clean verify
         continue-on-error: true
 
@@ -99,14 +99,14 @@ jobs:
 
       - name: Build with Maven
         env:
-          JWT_SECRET: test-secret-key-for-ci-cd-pipeline-min-512-bits-hs512-algorithm-requires-this-length
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: fluxpay_test
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
         run: mvn clean install -DskipTests
 
       - name: Run Tests
