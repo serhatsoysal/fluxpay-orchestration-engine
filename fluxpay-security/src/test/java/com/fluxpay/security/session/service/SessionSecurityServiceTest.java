@@ -153,6 +153,110 @@ class SessionSecurityServiceTest {
 
         assertThat(result).isTrue();
     }
+
+    @Test
+    void validateSession_ShouldReturnFalse_WhenSessionIsNull() {
+        boolean result = sessionSecurityService.validateSession(null);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void validateSession_ShouldReturnFalse_WhenExpiresAtIsNull() {
+        testSession.setExpiresAt(null);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void validateSession_ShouldReturnFalse_WhenAccessTokenIsNull() {
+        testSession.setAccessToken(null);
+        when(rateLimitService.isRateLimited(testSession.getSessionId(), "session_requests")).thenReturn(false);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void validateSession_ShouldReturnTrue_WhenSecurityFlagsIsNull() {
+        testSession.setSecurityFlags(null);
+        when(sessionRepository.isTokenBlacklisted(testSession.getAccessToken())).thenReturn(false);
+        when(rateLimitService.isRateLimited(testSession.getSessionId(), "session_requests")).thenReturn(false);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void validateSession_ShouldReturnTrue_WhenSessionIdIsNull() {
+        testSession.setSessionId(null);
+        when(sessionRepository.isTokenBlacklisted(testSession.getAccessToken())).thenReturn(false);
+
+        boolean result = sessionSecurityService.validateSession(testSession);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void verifyDeviceFingerprint_ShouldReturnFalse_WhenSessionIsNull() {
+        boolean result = sessionSecurityService.verifyDeviceFingerprint(null, "fingerprint");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void verifyDeviceFingerprint_ShouldReturnFalse_WhenDeviceFingerprintIsNull() {
+        testSession.setDeviceFingerprint(null);
+
+        boolean result = sessionSecurityService.verifyDeviceFingerprint(testSession, "fingerprint");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void verifyDeviceFingerprint_ShouldReturnFalse_WhenCurrentFingerprintIsNull() {
+        boolean result = sessionSecurityService.verifyDeviceFingerprint(testSession, null);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void recordSuspiciousActivity_ShouldHandleNullSession() {
+        sessionSecurityService.recordSuspiciousActivity(null, "reason");
+
+        verify(sessionRepository, never()).update(any());
+        verify(auditService, never()).logSecurityEvent(any(), any(), any());
+    }
+
+    @Test
+    void recordSuspiciousActivity_ShouldHandleNullSecurityFlags() {
+        testSession.setSecurityFlags(null);
+
+        sessionSecurityService.recordSuspiciousActivity(testSession, "reason");
+
+        verify(sessionRepository).update(testSession);
+        verify(auditService).logSecurityEvent(eq(testSession), eq("SUSPICIOUS_ACTIVITY"), eq("reason"));
+    }
+
+    @Test
+    void validateSessionCreation_ShouldThrowException_WhenSessionIsNull() {
+        assertThatThrownBy(() -> sessionSecurityService.validateSessionCreation(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Session data cannot be null");
+    }
+
+    @Test
+    void validateSessionCreation_ShouldPass_WhenIpAddressIsNull() {
+        testSession.setIpAddress(null);
+
+        sessionSecurityService.validateSessionCreation(testSession);
+
+        verify(rateLimitService, never()).isRateLimited(any(), any());
+    }
 }
 
 

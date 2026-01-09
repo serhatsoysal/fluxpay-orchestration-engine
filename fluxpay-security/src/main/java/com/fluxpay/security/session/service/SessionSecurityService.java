@@ -28,25 +28,33 @@ public class SessionSecurityService {
     }
 
     public void validateSessionCreation(SessionData session) {
-        if (rateLimitService.isRateLimited(session.getIpAddress(), "session_creation")) {
+        if (session == null) {
+            throw new IllegalArgumentException("Session data cannot be null");
+        }
+        
+        if (session.getIpAddress() != null && rateLimitService.isRateLimited(session.getIpAddress(), "session_creation")) {
             throw new RateLimitExceededException("Too many session creation attempts");
         }
     }
 
     public boolean validateSession(SessionData session) {
-        if (session.getExpiresAt().isBefore(Instant.now())) {
+        if (session == null) {
             return false;
         }
         
-        if (sessionRepository.isTokenBlacklisted(session.getAccessToken())) {
+        if (session.getExpiresAt() == null || session.getExpiresAt().isBefore(Instant.now())) {
             return false;
         }
         
-        if (session.getSecurityFlags().isSuspiciousActivity()) {
+        if (session.getAccessToken() != null && sessionRepository.isTokenBlacklisted(session.getAccessToken())) {
             return false;
         }
         
-        if (rateLimitService.isRateLimited(session.getSessionId(), "session_requests")) {
+        if (session.getSecurityFlags() != null && session.getSecurityFlags().isSuspiciousActivity()) {
+            return false;
+        }
+        
+        if (session.getSessionId() != null && rateLimitService.isRateLimited(session.getSessionId(), "session_requests")) {
             markSuspiciousActivity(session);
             return false;
         }
@@ -55,18 +63,32 @@ public class SessionSecurityService {
     }
 
     public void recordSuspiciousActivity(SessionData session, String reason) {
-        session.getSecurityFlags().setSuspiciousActivity(true);
-        session.getSecurityFlags().setFailedAttempts(
-                session.getSecurityFlags().getFailedAttempts() + 1);
-        session.getSecurityFlags().setLastSecurityCheck(Instant.now());
+        if (session == null) {
+            return;
+        }
+        
+        if (session.getSecurityFlags() != null) {
+            session.getSecurityFlags().setSuspiciousActivity(true);
+            session.getSecurityFlags().setFailedAttempts(
+                    session.getSecurityFlags().getFailedAttempts() + 1);
+            session.getSecurityFlags().setLastSecurityCheck(Instant.now());
+        }
         
         sessionRepository.update(session);
         auditService.logSecurityEvent(session, "SUSPICIOUS_ACTIVITY", reason);
     }
 
     public boolean verifyDeviceFingerprint(SessionData session, String currentFingerprint) {
-        if (!sessionProperties.getSecurity().isFingerprintVerification()) {
+        if (session == null) {
+            return false;
+        }
+        
+        if (sessionProperties.getSecurity() == null || !sessionProperties.getSecurity().isFingerprintVerification()) {
             return true;
+        }
+        
+        if (session.getDeviceFingerprint() == null || currentFingerprint == null) {
+            return false;
         }
         
         return session.getDeviceFingerprint().equals(currentFingerprint);

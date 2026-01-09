@@ -250,5 +250,80 @@ class SessionServiceTest {
         assertThat(result).isTrue();
         verify(sessionRepository).isTokenBlacklisted(token);
     }
+
+    @Test
+    void invalidateAllUserSessions_ShouldInvalidateAll_WhenExcludeSessionIdIsNull() {
+        SessionData session1 = SessionTestDataFactory.createSessionData(tenantId, userId);
+        SessionData session2 = SessionTestDataFactory.createSessionData(tenantId, userId);
+
+        when(sessionRepository.findAllByUser(tenantId, userId))
+                .thenReturn(Arrays.asList(session1, session2));
+        when(sessionRepository.findBySessionId(eq(tenantId), eq(userId), any()))
+                .thenReturn(session1, session2);
+
+        sessionService.invalidateAllUserSessions(tenantId, userId, null);
+
+        verify(sessionRepository).delete(tenantId, userId, session1.getSessionId());
+        verify(sessionRepository).delete(tenantId, userId, session2.getSessionId());
+    }
+
+    @Test
+    void refreshSession_ShouldThrowException_WhenSessionNotFound() {
+        when(sessionRepository.findByRefreshToken("invalid-token")).thenReturn(null);
+
+        assertThatThrownBy(() -> sessionService.refreshSession("invalid-token", "fingerprint"))
+                .isInstanceOf(SessionExpiredException.class)
+                .hasMessageContaining("Refresh token expired or invalid");
+    }
+
+    @Test
+    void refreshSession_ShouldThrowException_WhenRefreshTokenExpiresAtIsNull() {
+        testSession.setRefreshTokenExpiresAt(null);
+        when(sessionRepository.findByRefreshToken(testSession.getRefreshToken())).thenReturn(testSession);
+
+        assertThatThrownBy(() -> sessionService.refreshSession(testSession.getRefreshToken(), "fingerprint"))
+                .isInstanceOf(SessionExpiredException.class)
+                .hasMessageContaining("Refresh token expired or invalid");
+    }
+
+    @Test
+    void invalidateSession_ShouldHandleNullSession() {
+        when(sessionRepository.findBySessionId(tenantId, userId, "non-existent"))
+                .thenReturn(null);
+
+        sessionService.invalidateSession(tenantId, userId, "non-existent");
+
+        verify(sessionRepository, never()).delete(any(), any(), any());
+    }
+
+    @Test
+    void invalidateSession_ShouldBlacklistTokens_WhenTokensExist() {
+        testSession.setAccessToken("access-token");
+        testSession.setExpiresAt(Instant.now().plusSeconds(3600));
+        testSession.setRefreshToken("refresh-token");
+        testSession.setRefreshTokenExpiresAt(Instant.now().plusSeconds(86400));
+
+        when(sessionRepository.findBySessionId(tenantId, userId, testSession.getSessionId()))
+                .thenReturn(testSession);
+
+        sessionService.invalidateSession(tenantId, userId, testSession.getSessionId());
+
+        verify(sessionRepository, times(2)).blacklistToken(anyString(), any(Duration.class));
+    }
+
+    @Test
+    void invalidateSession_ShouldNotBlacklistExpiredTokens() {
+        testSession.setAccessToken("access-token");
+        testSession.setExpiresAt(Instant.now().minusSeconds(3600));
+        testSession.setRefreshToken("refresh-token");
+        testSession.setRefreshTokenExpiresAt(Instant.now().minusSeconds(3600));
+
+        when(sessionRepository.findBySessionId(tenantId, userId, testSession.getSessionId()))
+                .thenReturn(testSession);
+
+        sessionService.invalidateSession(tenantId, userId, testSession.getSessionId());
+
+        verify(sessionRepository, never()).blacklistToken(anyString(), any(Duration.class));
+    }
 }
 
