@@ -56,6 +56,8 @@
         <jackson.version>2.16.1</jackson.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <ua-parser.version>1.6.1</ua-parser.version>
+        <mockito.version>5.12.0</mockito.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -199,6 +201,26 @@
                 <artifactId>uap-java</artifactId>
                 <version>${ua-parser.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -274,7 +296,7 @@
                         <sonar.projectKey>serhatsoysal_fluxpay-orchestration-engine</sonar.projectKey>
                         <sonar.organization>serhatsoysal</sonar.organization>
                         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-                        <sonar.exclusions>**/session/**,**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/**,**/NotificationController.java,**/Notification*.java,**/RefreshToken*.java,**/SessionInfoResponse.java,**/V8__create_session_tables.sql</sonar.exclusions>
+                        <sonar.exclusions>**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/**,**/NotificationController.java,**/Notification*.java,**/RefreshToken*.java,**/SessionInfoResponse.java,**/V8__create_session_tables.sql</sonar.exclusions>
                     </configuration>
                 </plugin>
                 
