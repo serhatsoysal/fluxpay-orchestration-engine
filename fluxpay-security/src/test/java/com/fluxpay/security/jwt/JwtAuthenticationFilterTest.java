@@ -102,13 +102,19 @@ class JwtAuthenticationFilterTest {
         when(sessionService.updateLastAccess(any(SessionData.class))).thenReturn(completedFuture);
         doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
+        
+        UUID[] capturedTenantId = new UUID[1];
+        doAnswer(invocation -> {
+            capturedTenantId[0] = TenantContext.getCurrentTenantId();
+            return null;
+        }).when(filterChain).doFilter(request, response);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertNotNull(TenantContext.getCurrentTenantId());
-        assertEquals(tenantId, TenantContext.getCurrentTenantId());
+        assertNotNull(capturedTenantId[0]);
+        assertEquals(tenantId, capturedTenantId[0]);
     }
 
     @Test
@@ -302,12 +308,19 @@ class JwtAuthenticationFilterTest {
         doThrow(new RuntimeException("Session creation failed")).when(sessionService).createSession(any());
         when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
+        
+        UUID[] capturedTenantId = new UUID[1];
+        doAnswer(invocation -> {
+            capturedTenantId[0] = TenantContext.getCurrentTenantId();
+            return null;
+        }).when(filterChain).doFilter(request, response);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals(tenantId, TenantContext.getCurrentTenantId());
+        assertNotNull(capturedTenantId[0]);
+        assertEquals(tenantId, capturedTenantId[0]);
     }
 
     @Test
