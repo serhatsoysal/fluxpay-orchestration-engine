@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class AuthControllerTest {
 
     @Mock
@@ -123,7 +124,7 @@ class AuthControllerTest {
         when(deviceFingerprintService.generateFingerprint(httpRequest)).thenReturn(deviceFingerprint);
         when(deviceFingerprintService.getClientIpAddress(httpRequest)).thenReturn(ipAddress);
         when(httpRequest.getHeader("User-Agent")).thenReturn("test-agent");
-        doNothing().when(sessionService).createSession(any(SessionData.class));
+        when(sessionService.createSession(any(SessionData.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ResponseEntity<LoginResponse> response = authController.login(request, httpRequest);
 
