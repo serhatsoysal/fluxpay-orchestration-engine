@@ -30,7 +30,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             urlToParse = dbHost;
         }
         
-        if (StringUtils.hasText(urlToParse) && !urlToParse.startsWith("jdbc:")) {
+        if (urlToParse != null && StringUtils.hasText(urlToParse) && !urlToParse.startsWith("jdbc:")) {
             try {
                 String url = urlToParse.trim();
                 String username = null;
