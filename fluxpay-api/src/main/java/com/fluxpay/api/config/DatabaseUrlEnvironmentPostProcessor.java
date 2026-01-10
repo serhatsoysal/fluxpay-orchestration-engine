@@ -30,64 +30,70 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             urlToParse = dbHost;
         }
         
-        if (urlToParse != null && StringUtils.hasText(urlToParse) && !urlToParse.startsWith("jdbc:")) {
-            try {
-                String url = urlToParse.trim();
-                String username = null;
-                String password = null;
-                String host = null;
-                int port = 5432;
-                String database = null;
-                
-                if (url.startsWith("postgresql://") || url.startsWith("postgres://")) {
-                    url = url.replaceFirst("^postgresql://", "").replaceFirst("^postgres://", "");
-                }
-                
-                int atIndex = url.indexOf('@');
-                if (atIndex > 0) {
-                    String userInfo = url.substring(0, atIndex);
-                    String[] userParts = userInfo.split(":", 2);
-                    username = userParts.length > 0 ? userParts[0] : null;
-                    password = userParts.length > 1 ? userParts[1] : null;
-                    
-                    String hostDbPart = url.substring(atIndex + 1);
-                    int slashIndex = hostDbPart.indexOf('/');
-                    if (slashIndex > 0) {
-                        String hostPort = hostDbPart.substring(0, slashIndex);
-                        database = hostDbPart.substring(slashIndex + 1);
-                        
-                        if (hostPort.contains(":")) {
-                            String[] hostPortParts = hostPort.split(":", 2);
-                            host = hostPortParts[0];
-                            if (hostPortParts.length > 1) {
-                                try {
-                                    port = Integer.parseInt(hostPortParts[1]);
-                                } catch (NumberFormatException e) {
-                                    port = 5432;
-                                }
-                            }
-                        } else {
-                            host = hostPort;
-                        }
-                    }
-                }
-                
-                if (host != null && database != null) {
-                    Map<String, Object> properties = new HashMap<>();
-                    properties.put("spring.datasource.url", String.format("jdbc:postgresql://%s:%d/%s", host, port, database));
-                    if (username != null) {
-                        properties.put("spring.datasource.username", username);
-                    }
-                    if (password != null) {
-                        properties.put("spring.datasource.password", password);
-                    }
-                    
-                    MapPropertySource propertySource = new MapPropertySource("databaseUrlConfig", properties);
-                    environment.getPropertySources().addFirst(propertySource);
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to parse database URL: " + urlToParse, e);
+        if (urlToParse == null) {
+            return;
+        }
+        
+        if (urlToParse.startsWith("jdbc:")) {
+            return;
+        }
+        
+        try {
+            String url = urlToParse.trim();
+            String username = null;
+            String password = null;
+            String host = null;
+            int port = 5432;
+            String database = null;
+            
+            if (url.startsWith("postgresql://") || url.startsWith("postgres://")) {
+                url = url.replaceFirst("^postgresql://", "").replaceFirst("^postgres://", "");
             }
+            
+            int atIndex = url.indexOf('@');
+            if (atIndex > 0) {
+                String userInfo = url.substring(0, atIndex);
+                String[] userParts = userInfo.split(":", 2);
+                username = userParts.length > 0 ? userParts[0] : null;
+                password = userParts.length > 1 ? userParts[1] : null;
+                
+                String hostDbPart = url.substring(atIndex + 1);
+                int slashIndex = hostDbPart.indexOf('/');
+                if (slashIndex > 0) {
+                    String hostPort = hostDbPart.substring(0, slashIndex);
+                    database = hostDbPart.substring(slashIndex + 1);
+                    
+                    if (hostPort.contains(":")) {
+                        String[] hostPortParts = hostPort.split(":", 2);
+                        host = hostPortParts[0];
+                        if (hostPortParts.length > 1) {
+                            try {
+                                port = Integer.parseInt(hostPortParts[1]);
+                            } catch (NumberFormatException e) {
+                                port = 5432;
+                            }
+                        }
+                    } else {
+                        host = hostPort;
+                    }
+                }
+            }
+            
+            if (host != null && database != null) {
+                Map<String, Object> properties = new HashMap<>();
+                properties.put("spring.datasource.url", String.format("jdbc:postgresql://%s:%d/%s", host, port, database));
+                if (username != null) {
+                    properties.put("spring.datasource.username", username);
+                }
+                if (password != null) {
+                    properties.put("spring.datasource.password", password);
+                }
+                
+                MapPropertySource propertySource = new MapPropertySource("databaseUrlConfig", properties);
+                environment.getPropertySources().addFirst(propertySource);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to parse database URL: " + urlToParse, e);
         }
     }
 }
