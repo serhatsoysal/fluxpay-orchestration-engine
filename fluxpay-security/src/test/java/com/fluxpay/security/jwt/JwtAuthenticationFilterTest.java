@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -94,7 +95,7 @@ class JwtAuthenticationFilterTest {
         when(sessionService.getSession(tenantId, userId, "session-123")).thenReturn(mockSession);
         when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
-        doNothing().when(sessionService).updateLastAccess(any());
+        when(sessionService.updateLastAccess(any())).thenReturn(CompletableFuture.completedFuture(null));
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -296,6 +297,7 @@ class JwtAuthenticationFilterTest {
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(tenantId, TenantContext.getCurrentTenantId());
     }
 
