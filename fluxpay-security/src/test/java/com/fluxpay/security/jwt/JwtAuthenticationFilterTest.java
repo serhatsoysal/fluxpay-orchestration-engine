@@ -293,6 +293,8 @@ class JwtAuthenticationFilterTest {
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
         doThrow(new RuntimeException("Session creation failed")).when(sessionService).createSession(any());
+        doNothing().when(sessionSecurityService).verifyDeviceFingerprint(any(), anyString());
+        doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
