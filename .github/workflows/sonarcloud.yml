@@ -47,31 +47,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: serhatsoysal_fluxpay-orchestration-engine
-          SONAR_ORGANIZATION: serhatsoysal
-          SONAR_HOST_URL: https://sonarcloud.io
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            mvn clean verify sonar:sonar \
-              -Djacoco.check.haltOnFailure=false \
-              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.organization=${SONAR_ORGANIZATION} \
-              -Dsonar.host.url=${SONAR_HOST_URL} \
-              -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }} \
-              -Dsonar.pullrequest.branch=${{ github.head_ref }} \
-              -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
-              -Dsonar.pullrequest.provider=GitHub \
-              -Dsonar.pullrequest.github.repository=${{ github.repository }}
-          else
-            mvn clean verify sonar:sonar \
-              -Djacoco.check.haltOnFailure=false \
-              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-              -Dsonar.organization=${SONAR_ORGANIZATION} \
-              -Dsonar.host.url=${SONAR_HOST_URL} \
-              -Dsonar.branch.name=${{ github.ref_name }}
-          fi
+        run: mvn clean verify -Djacoco.check.haltOnFailure=false
 
       - name: Verify coverage report
         run: |
@@ -88,5 +64,31 @@ jobs:
             echo "Listing fluxpay-coverage-report directory:"
             ls -la fluxpay-coverage-report/target/site/ 2>/dev/null || echo "Target directory does not exist"
             exit 1
+          fi
+
+      - name: SonarCloud analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: serhatsoysal_fluxpay-orchestration-engine
+          SONAR_ORGANIZATION: serhatsoysal
+          SONAR_HOST_URL: https://sonarcloud.io
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            mvn sonar:sonar \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.organization=${SONAR_ORGANIZATION} \
+              -Dsonar.host.url=${SONAR_HOST_URL} \
+              -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }} \
+              -Dsonar.pullrequest.branch=${{ github.head_ref }} \
+              -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
+              -Dsonar.pullrequest.provider=GitHub \
+              -Dsonar.pullrequest.github.repository=${{ github.repository }}
+          else
+            mvn sonar:sonar \
+              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+              -Dsonar.organization=${SONAR_ORGANIZATION} \
+              -Dsonar.host.url=${SONAR_HOST_URL} \
+              -Dsonar.branch.name=${{ github.ref_name }}
           fi
 
