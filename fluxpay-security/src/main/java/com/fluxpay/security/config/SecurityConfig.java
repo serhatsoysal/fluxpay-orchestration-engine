@@ -51,6 +51,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/actuator/**"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/tenants/register", "/actuator/health").permitAll()
                         .anyRequest().authenticated()
