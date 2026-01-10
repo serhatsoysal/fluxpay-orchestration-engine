@@ -115,7 +115,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
-        run: mvn clean install -DskipTests
+        run: mvn clean install -DskipTests -U
 
       - name: Run Tests
         run: mvn test || true
