@@ -53,14 +53,13 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
                 MapPropertySource propertySource = new MapPropertySource("databaseUrlProcessor", properties);
                 MutablePropertySources propertySources = environment.getPropertySources();
                 
-                if (propertySources.contains("systemProperties")) {
+                String applicationConfigSourceName = "applicationConfig: [classpath:/application.yml]";
+                if (propertySources.contains(applicationConfigSourceName)) {
+                    propertySources.addBefore(applicationConfigSourceName, propertySource);
+                } else if (propertySources.contains("systemProperties")) {
                     propertySources.addBefore("systemProperties", propertySource);
                 } else {
                     propertySources.addFirst(propertySource);
-                }
-                
-                if (propertySources.contains("applicationConfig: [classpath:/application.yml]")) {
-                    propertySources.addBefore("applicationConfig: [classpath:/application.yml]", propertySource);
                 }
             }
         } catch (Exception e) {
