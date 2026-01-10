@@ -1,11 +1,10 @@
 package com.fluxpay.product.service;
 
-import com.fluxpay.common.enums.PricingModel;
 import com.fluxpay.common.exception.ResourceNotFoundException;
-import com.fluxpay.product.entity.Price;
 import com.fluxpay.product.entity.Product;
-import com.fluxpay.product.repository.PriceRepository;
 import com.fluxpay.product.repository.ProductRepository;
+import com.fluxpay.security.context.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,25 +27,33 @@ class ProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
-    @Mock
-    private PriceRepository priceRepository;
-
     @InjectMocks
     private ProductService productService;
 
     private Product product;
+    private UUID tenantId;
 
     @BeforeEach
     void setUp() {
+        tenantId = UUID.randomUUID();
+        TenantContext.setCurrentTenant(tenantId);
+        
         product = new Product();
         product.setId(UUID.randomUUID());
         product.setName("Test Product");
         product.setDescription("Test Description");
         product.setActive(true);
+        product.setTenantId(tenantId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
     void createProduct_Success() {
+        when(productRepository.existsByTenantIdAndName(tenantId, product.getName())).thenReturn(false);
         when(productRepository.save(product)).thenReturn(product);
 
         Product result = productService.createProduct(product);
@@ -79,7 +85,7 @@ class ProductServiceTest {
     @Test
     void getActiveProducts_Success() {
         List<Product> products = Arrays.asList(product);
-        when(productRepository.findByActiveTrue()).thenReturn(products);
+        when(productRepository.findByTenantIdAndActive(tenantId, true)).thenReturn(products);
 
         List<Product> result = productService.getActiveProducts();
 

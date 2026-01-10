@@ -2,10 +2,13 @@ package com.fluxpay.subscription.service;
 
 import com.fluxpay.common.enums.SubscriptionStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.security.context.TenantContext;
 import com.fluxpay.subscription.entity.Customer;
 import com.fluxpay.subscription.entity.Subscription;
-import com.fluxpay.subscription.repository.CustomerRepository;
+import com.fluxpay.subscription.entity.SubscriptionItem;
+import com.fluxpay.subscription.repository.SubscriptionItemRepository;
 import com.fluxpay.subscription.repository.SubscriptionRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,16 +32,20 @@ class SubscriptionServiceTest {
     private SubscriptionRepository subscriptionRepository;
 
     @Mock
-    private CustomerRepository customerRepository;
+    private SubscriptionItemRepository subscriptionItemRepository;
 
     @InjectMocks
     private SubscriptionService subscriptionService;
 
     private Subscription subscription;
     private Customer customer;
+    private UUID tenantId;
 
     @BeforeEach
     void setUp() {
+        tenantId = UUID.randomUUID();
+        TenantContext.setCurrentTenant(tenantId);
+        
         customer = new Customer();
         customer.setId(UUID.randomUUID());
         customer.setEmail("test@example.com");
@@ -47,6 +54,12 @@ class SubscriptionServiceTest {
         subscription.setId(UUID.randomUUID());
         subscription.setCustomerId(customer.getId());
         subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setTenantId(tenantId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
@@ -71,7 +84,7 @@ class SubscriptionServiceTest {
     @Test
     void getSubscriptionsByCustomer_Success() {
         List<Subscription> subscriptions = Arrays.asList(subscription);
-        when(subscriptionRepository.findByCustomerId(customer.getId())).thenReturn(subscriptions);
+        when(subscriptionRepository.findByTenantIdAndCustomerId(tenantId, customer.getId())).thenReturn(subscriptions);
 
         List<Subscription> result = subscriptionService.getSubscriptionsByCustomer(customer.getId());
 

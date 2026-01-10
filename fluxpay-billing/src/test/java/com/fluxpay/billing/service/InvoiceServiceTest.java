@@ -1,9 +1,13 @@
 package com.fluxpay.billing.service;
 
 import com.fluxpay.billing.entity.Invoice;
+import com.fluxpay.billing.entity.InvoiceItem;
+import com.fluxpay.billing.repository.InvoiceItemRepository;
 import com.fluxpay.billing.repository.InvoiceRepository;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.security.context.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,18 +31,33 @@ class InvoiceServiceTest {
     @Mock
     private InvoiceRepository invoiceRepository;
 
+    @Mock
+    private InvoiceItemRepository invoiceItemRepository;
+
     @InjectMocks
     private InvoiceService invoiceService;
 
     private Invoice invoice;
+    private UUID tenantId;
+    private UUID customerId;
 
     @BeforeEach
     void setUp() {
+        tenantId = UUID.randomUUID();
+        TenantContext.setCurrentTenant(tenantId);
+        
+        customerId = UUID.randomUUID();
         invoice = new Invoice();
         invoice.setId(UUID.randomUUID());
-        invoice.setCustomerId(UUID.randomUUID());
+        invoice.setCustomerId(customerId);
         invoice.setStatus(InvoiceStatus.DRAFT);
         invoice.setTotal(BigDecimal.valueOf(100.00));
+        invoice.setTenantId(tenantId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
@@ -63,12 +82,12 @@ class InvoiceServiceTest {
     @Test
     void getInvoicesByCustomer_Success() {
         List<Invoice> invoices = Arrays.asList(invoice);
-        when(invoiceRepository.findByCustomerId(invoice.getCustomerId())).thenReturn(invoices);
+        when(invoiceRepository.findByTenantIdAndCustomerId(tenantId, customerId)).thenReturn(invoices);
 
-        List<Invoice> result = invoiceService.getInvoicesByCustomer(invoice.getCustomerId());
+        List<Invoice> result = invoiceService.getInvoicesByCustomer(customerId);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCustomerId()).isEqualTo(invoice.getCustomerId());
+        assertThat(result.get(0).getCustomerId()).isEqualTo(customerId);
     }
 }
 
