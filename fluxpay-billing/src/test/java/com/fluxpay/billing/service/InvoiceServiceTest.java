@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +50,9 @@ class InvoiceServiceTest {
         invoice.setId(UUID.randomUUID());
         invoice.setCustomerId(customerId);
         invoice.setStatus(InvoiceStatus.DRAFT);
-        invoice.setTotal(BigDecimal.valueOf(100.00));
+        invoice.setSubtotal(100L);
+        invoice.setTotal(100L);
+        invoice.setAmountDue(100L);
         invoice.setTenantId(tenantId);
     }
 

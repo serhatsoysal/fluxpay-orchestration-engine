@@ -90,7 +90,7 @@ class ProductServiceTest {
         List<Product> result = productService.getActiveProducts();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).isActive()).isTrue();
+        assertThat(result.get(0).getActive()).isTrue();
     }
 }
 
