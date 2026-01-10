@@ -34,12 +34,13 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             return;
         }
         
-        if (urlToParse.startsWith("jdbc:")) {
+        final String finalUrlToParse = urlToParse;
+        if (finalUrlToParse.startsWith("jdbc:")) {
             return;
         }
         
         try {
-            String url = urlToParse.trim();
+            String url = finalUrlToParse.trim();
             String username = null;
             String password = null;
             String host = null;
@@ -93,7 +94,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
                 environment.getPropertySources().addFirst(propertySource);
             }
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to parse database URL: " + urlToParse, e);
+            throw new IllegalStateException("Failed to parse database URL: " + finalUrlToParse, e);
         }
     }
 }
