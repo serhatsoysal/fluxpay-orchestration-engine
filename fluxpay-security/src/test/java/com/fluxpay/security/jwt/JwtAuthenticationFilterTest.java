@@ -98,8 +98,10 @@ class JwtAuthenticationFilterTest {
         when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
         when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
-        when(sessionService.updateLastAccess(any(SessionData.class))).thenReturn(CompletableFuture.completedFuture(null));
+        CompletableFuture<Void> completedFuture = CompletableFuture.completedFuture(null);
+        when(sessionService.updateLastAccess(any(SessionData.class))).thenReturn(completedFuture);
         doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
+        when(request.getHeader("User-Agent")).thenReturn("test-agent");
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
