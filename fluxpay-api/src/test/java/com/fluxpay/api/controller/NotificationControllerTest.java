@@ -63,7 +63,7 @@ class NotificationControllerTest {
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userId);
-        TenantContext.setTenantId(tenantId);
+        TenantContext.setCurrentTenant(tenantId);
     }
 
     @AfterEach
@@ -148,7 +148,7 @@ class NotificationControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().isRead()).isTrue();
+        assertThat(response.getBody().getRead()).isTrue();
         assertThat(response.getBody().getReadAt()).isNotNull();
     }
 
