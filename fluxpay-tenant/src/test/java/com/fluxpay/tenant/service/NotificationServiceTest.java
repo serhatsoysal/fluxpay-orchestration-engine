@@ -137,7 +137,7 @@ class NotificationServiceTest {
         Notification result = notificationService.markAsRead(notification.getId());
 
         assertThat(result).isNotNull();
-        assertThat(result.isRead()).isTrue();
+        assertThat(result.getRead()).isTrue();
         assertThat(result.getReadAt()).isNotNull();
         verify(notificationRepository).save(notification);
     }
