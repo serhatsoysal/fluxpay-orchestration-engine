@@ -1,5 +1,7 @@
 package com.fluxpay.api.controller;
 
+import com.fluxpay.common.dto.PageResponse;
+import com.fluxpay.common.enums.SubscriptionStatus;
 import com.fluxpay.subscription.entity.Customer;
 import com.fluxpay.subscription.entity.Subscription;
 import com.fluxpay.subscription.entity.SubscriptionItem;
@@ -23,6 +25,15 @@ public class SubscriptionController {
     public SubscriptionController(SubscriptionService subscriptionService, CustomerService customerService) {
         this.subscriptionService = subscriptionService;
         this.customerService = customerService;
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResponse<Subscription>> getSubscriptions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) SubscriptionStatus status) {
+        PageResponse<Subscription> response = subscriptionService.getSubscriptions(page, size, status);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping

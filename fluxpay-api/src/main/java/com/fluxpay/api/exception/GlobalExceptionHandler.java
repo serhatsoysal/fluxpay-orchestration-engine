@@ -1,7 +1,10 @@
 package com.fluxpay.api.exception;
 
 import com.fluxpay.common.dto.ErrorResponse;
+import com.fluxpay.common.exception.RateLimitExceededException;
 import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.common.exception.SessionExpiredException;
+import com.fluxpay.common.exception.SessionInvalidException;
 import com.fluxpay.common.exception.TenantSuspendedException;
 import com.fluxpay.common.exception.ValidationException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +68,42 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(SessionExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleSessionExpired(
+            SessionExpiredException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Session Expired",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(SessionInvalidException.class)
+    public ResponseEntity<ErrorResponse> handleSessionInvalid(
+            SessionInvalidException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Session Invalid",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(
+            RateLimitExceededException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Rate Limit Exceeded",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
     }
 
     @ExceptionHandler(Exception.class)

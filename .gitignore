@@ -78,3 +78,6 @@ docker-compose.override.yml
 # Logs
 logs.txt
 *.log.txt
+
+# Session Management
+SESSION_MANAGEMENT_INTEGRATION.md

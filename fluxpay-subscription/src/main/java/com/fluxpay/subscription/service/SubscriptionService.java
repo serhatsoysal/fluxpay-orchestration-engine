@@ -1,5 +1,6 @@
 package com.fluxpay.subscription.service;
 
+import com.fluxpay.common.dto.PageResponse;
 import com.fluxpay.common.enums.SubscriptionStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
 import com.fluxpay.security.context.TenantContext;
@@ -7,6 +8,9 @@ import com.fluxpay.subscription.entity.Subscription;
 import com.fluxpay.subscription.entity.SubscriptionItem;
 import com.fluxpay.subscription.repository.SubscriptionItemRepository;
 import com.fluxpay.subscription.repository.SubscriptionRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +48,22 @@ public class SubscriptionService {
         return subscriptionRepository.findById(id)
                 .filter(s -> s.getDeletedAt() == null)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", id));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<Subscription> getSubscriptions(int page, int size, SubscriptionStatus status) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Subscription> subscriptionPage = subscriptionRepository.findByTenantIdAndStatus(tenantId, status, pageable);
+        
+        return new PageResponse<>(
+                subscriptionPage.getContent(),
+                subscriptionPage.getNumber(),
+                subscriptionPage.getSize(),
+                subscriptionPage.getTotalElements(),
+                subscriptionPage.getTotalPages(),
+                subscriptionPage.isLast()
+        );
     }
 
     @Transactional(readOnly = true)

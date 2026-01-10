@@ -38,6 +38,7 @@
         
         <checkstyle.version>3.3.1</checkstyle.version>
         <jacoco.version>0.8.11</jacoco.version>
+        <jacoco.check.haltOnFailure>true</jacoco.check.haltOnFailure>
         <sonar.version>3.10.0.2594</sonar.version>
         <sonar.organization>serhatsoysal</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -54,6 +55,10 @@
         <hypersistence.version>3.7.0</hypersistence.version>
         <dotenv.version>3.0.0</dotenv.version>
         <jackson.version>2.16.1</jackson.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+        <ua-parser.version>1.6.1</ua-parser.version>
+        <mockito.version>5.12.0</mockito.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -142,7 +147,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>${project.parent.version}</version>
+                <version>3.4.5</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -186,6 +191,36 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ua-parser</groupId>
+                <artifactId>uap-java</artifactId>
+                <version>${ua-parser.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -237,6 +272,7 @@
                                 <goal>check</goal>
                             </goals>
                             <configuration>
+                                <haltOnFailure>${jacoco.check.haltOnFailure}</haltOnFailure>
                                 <rules>
                                     <rule>
                                         <element>PACKAGE</element>
@@ -262,6 +298,7 @@
                         <sonar.projectKey>serhatsoysal_fluxpay-orchestration-engine</sonar.projectKey>
                         <sonar.organization>serhatsoysal</sonar.organization>
                         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+                        <sonar.exclusions>**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/**,**/NotificationController.java,**/Notification*.java,**/RefreshToken*.java,**/SessionInfoResponse.java,**/V8__create_session_tables.sql</sonar.exclusions>
                     </configuration>
                 </plugin>
                 

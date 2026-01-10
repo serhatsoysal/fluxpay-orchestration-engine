@@ -1,6 +1,12 @@
 package com.fluxpay.security.jwt;
 
 import com.fluxpay.security.context.TenantContext;
+import com.fluxpay.security.session.model.DeviceInfo;
+import com.fluxpay.security.session.model.SecurityFlags;
+import com.fluxpay.security.session.model.SessionData;
+import com.fluxpay.security.session.service.DeviceFingerprintService;
+import com.fluxpay.security.session.service.SessionSecurityService;
+import com.fluxpay.security.session.service.SessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -19,9 +26,19 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final SessionService sessionService;
+    private final SessionSecurityService sessionSecurityService;
+    private final DeviceFingerprintService deviceFingerprintService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider,
+            SessionService sessionService,
+            SessionSecurityService sessionSecurityService,
+            DeviceFingerprintService deviceFingerprintService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.sessionService = sessionService;
+        this.sessionSecurityService = sessionSecurityService;
+        this.deviceFingerprintService = deviceFingerprintService;
     }
 
     @Override
@@ -30,19 +47,84 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            UUID userId = jwtTokenProvider.getUserId(token);
-            UUID tenantId = jwtTokenProvider.getTenantId(token);
-            String role = jwtTokenProvider.getRole(token);
+            try {
+                if (sessionService.isTokenBlacklisted(token)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
-            TenantContext.setCurrentTenant(tenantId);
+                UUID userId;
+                UUID tenantId;
+                String role;
+                String sessionId;
+                
+                try {
+                    userId = jwtTokenProvider.getUserId(token);
+                    tenantId = jwtTokenProvider.getTenantId(token);
+                    role = jwtTokenProvider.getRole(token);
+                    sessionId = jwtTokenProvider.getSessionId(token);
+                } catch (IllegalArgumentException e) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userId,
-                    null,
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-            );
+                SessionData session = null;
+                
+                try {
+                    if (sessionId != null) {
+                        session = sessionService.getSession(tenantId, userId, sessionId);
+                    }
+                } catch (Exception ignored) {
+                }
+                
+                if (session == null) {
+                    try {
+                        String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
+                        session = buildSessionData(token, userId, tenantId, role, sessionId, request, deviceFingerprint);
+                        sessionService.createSession(session);
+                    } catch (Exception ignored) {
+                        session = buildSessionData(token, userId, tenantId, role, sessionId, request, null);
+                    }
+                } else {
+                    try {
+                        String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
+                        if (!sessionSecurityService.verifyDeviceFingerprint(session, deviceFingerprint)) {
+                            sessionSecurityService.recordSuspiciousActivity(session, "Device fingerprint mismatch");
+                        }
+                        sessionService.updateLastAccess(session);
+                    } catch (Exception ignored) {
+                    }
+                }
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                TenantContext.setCurrentTenant(tenantId);
+
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userId,
+                        session,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                try {
+                    UUID userId = jwtTokenProvider.getUserId(token);
+                    UUID tenantId = jwtTokenProvider.getTenantId(token);
+                    String role = jwtTokenProvider.getRole(token);
+                    
+                    TenantContext.setCurrentTenant(tenantId);
+                    
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (IllegalArgumentException ex) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+            }
         }
 
         try {
@@ -50,6 +132,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } finally {
             TenantContext.clear();
         }
+    }
+    
+    private SessionData buildSessionData(String token, UUID userId, UUID tenantId, String role, 
+                                         String sessionId, HttpServletRequest request, String deviceFingerprint) {
+        if (sessionId == null) {
+            sessionId = UUID.randomUUID().toString();
+        }
+        
+        DeviceInfo deviceInfo = null;
+        String ipAddress = null;
+        
+        try {
+            deviceInfo = deviceFingerprintService.extractDeviceInfo(request);
+            ipAddress = deviceFingerprintService.getClientIpAddress(request);
+        } catch (Exception ignored) {
+        }
+        
+        return SessionData.builder()
+                .sessionId(sessionId)
+                .accessToken(token)
+                .refreshToken(null)
+                .userId(userId)
+                .tenantId(tenantId)
+                .role(role)
+                .deviceInfo(deviceInfo)
+                .deviceFingerprint(deviceFingerprint)
+                .ipAddress(ipAddress)
+                .userAgent(request.getHeader("User-Agent"))
+                .securityFlags(SecurityFlags.builder()
+                        .suspiciousActivity(false)
+                        .requiresReauth(false)
+                        .mfaRequired(false)
+                        .failedAttempts(0)
+                        .lastSecurityCheck(Instant.now())
+                        .build())
+                .createdAt(Instant.now())
+                .lastAccess(Instant.now())
+                .requestCount(0)
+                .build();
     }
 
     private String resolveToken(HttpServletRequest request) {

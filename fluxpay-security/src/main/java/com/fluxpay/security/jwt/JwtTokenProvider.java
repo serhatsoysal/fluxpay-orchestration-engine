@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -25,6 +24,10 @@ public class JwtTokenProvider {
     }
 
     public String createToken(UUID userId, UUID tenantId, String role) {
+        return createToken(userId, tenantId, role, null);
+    }
+
+    public String createToken(UUID userId, UUID tenantId, String role, String sessionId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -32,6 +35,7 @@ public class JwtTokenProvider {
                 .subject(userId.toString())
                 .claim("tenantId", tenantId.toString())
                 .claim("role", role)
+                .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key, Jwts.SIG.HS512)
@@ -52,16 +56,42 @@ public class JwtTokenProvider {
 
     public UUID getUserId(String token) {
         String subject = getClaims(token).getSubject();
-        return UUID.fromString(subject);
+        if (subject == null || subject.isBlank()) {
+            throw new IllegalArgumentException("Token subject is missing or empty");
+        }
+        try {
+            return UUID.fromString(subject);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid user ID format in token", e);
+        }
     }
 
     public UUID getTenantId(String token) {
         String tenantId = getClaims(token).get("tenantId", String.class);
-        return UUID.fromString(tenantId);
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Token tenantId is missing or empty");
+        }
+        try {
+            return UUID.fromString(tenantId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid tenant ID format in token", e);
+        }
     }
 
     public String getRole(String token) {
-        return getClaims(token).get("role", String.class);
+        String role = getClaims(token).get("role", String.class);
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException("Token role is missing or empty");
+        }
+        return role;
+    }
+
+    public String getSessionId(String token) {
+        return getClaims(token).get("sessionId", String.class);
+    }
+
+    public Date getExpirationDate(String token) {
+        return getClaims(token).getExpiration();
     }
 
     private Claims getClaims(String token) {
