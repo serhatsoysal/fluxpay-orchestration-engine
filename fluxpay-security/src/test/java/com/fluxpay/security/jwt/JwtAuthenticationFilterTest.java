@@ -94,9 +94,7 @@ class JwtAuthenticationFilterTest {
         when(sessionService.getSession(tenantId, userId, "session-123")).thenReturn(mockSession);
         when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
-        when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
-        when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
-        when(request.getHeader("User-Agent")).thenReturn("test-agent");
+        doNothing().when(sessionService).updateLastAccess(any());
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -293,7 +291,7 @@ class JwtAuthenticationFilterTest {
         when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
-        when(sessionService.createSession(any())).thenReturn(null);
+        doThrow(new RuntimeException("Session creation failed")).when(sessionService).createSession(any());
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 

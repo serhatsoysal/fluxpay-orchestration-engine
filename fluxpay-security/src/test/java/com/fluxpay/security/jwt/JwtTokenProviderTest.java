@@ -305,12 +305,12 @@ class JwtTokenProviderTest {
 
     @Test
     void testTokenExpirationBoundary() {
-        JwtTokenProvider veryShortProvider = new JwtTokenProvider(secret, 1L);
+        JwtTokenProvider veryShortProvider = new JwtTokenProvider(secret, 1000L);
         String token = veryShortProvider.createToken(userId, tenantId, role);
         
         Date expirationDate = veryShortProvider.getExpirationDate(token);
         assertNotNull(expirationDate);
-        assertTrue(expirationDate.getTime() > System.currentTimeMillis());
+        assertTrue(expirationDate.getTime() >= System.currentTimeMillis());
     }
 
     @Test

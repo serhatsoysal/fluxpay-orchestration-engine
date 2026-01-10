@@ -56,6 +56,7 @@ class SecurityConfigTest {
         when(request.getServletPath()).thenReturn("/api/test");
         jakarta.servlet.http.HttpServletMapping mapping = mock(jakarta.servlet.http.HttpServletMapping.class);
         when(mapping.getMappingMatch()).thenReturn(jakarta.servlet.http.MappingMatch.PATH);
+        when(mapping.getPattern()).thenReturn("/**");
         when(request.getHttpServletMapping()).thenReturn(mapping);
         
         CorsConfiguration config = corsConfigurationSource.getCorsConfiguration(request);
