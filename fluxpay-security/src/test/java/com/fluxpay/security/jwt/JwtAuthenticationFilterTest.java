@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class JwtAuthenticationFilterTest {
 
     @Mock
@@ -95,7 +96,10 @@ class JwtAuthenticationFilterTest {
         when(sessionService.getSession(tenantId, userId, "session-123")).thenReturn(mockSession);
         when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         when(deviceFingerprintService.generateFingerprint(request)).thenReturn("fingerprint");
+        when(deviceFingerprintService.extractDeviceInfo(request)).thenReturn(DeviceInfo.builder().build());
+        when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
         when(sessionService.updateLastAccess(any())).thenReturn(CompletableFuture.completedFuture(null));
+        doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -293,7 +297,7 @@ class JwtAuthenticationFilterTest {
         when(deviceFingerprintService.getClientIpAddress(request)).thenReturn("127.0.0.1");
         when(request.getHeader("User-Agent")).thenReturn("test-agent");
         doThrow(new RuntimeException("Session creation failed")).when(sessionService).createSession(any());
-        doNothing().when(sessionSecurityService).verifyDeviceFingerprint(any(), anyString());
+        when(sessionSecurityService.verifyDeviceFingerprint(any(), anyString())).thenReturn(true);
         doNothing().when(sessionSecurityService).recordSuspiciousActivity(any(), anyString());
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
