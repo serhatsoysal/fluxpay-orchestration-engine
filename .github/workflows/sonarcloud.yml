@@ -71,27 +71,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          SONAR_ARGS="-Dsonar.projectKey=serhatsoysal_fluxpay-orchestration-engine \
-            -Dsonar.organization=serhatsoysal \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.sources=fluxpay-common/src/main,fluxpay-security/src/main,fluxpay-tenant/src/main,fluxpay-product/src/main,fluxpay-subscription/src/main,fluxpay-billing/src/main,fluxpay-api/src/main \
-            -Dsonar.tests=fluxpay-common/src/test,fluxpay-security/src/test,fluxpay-tenant/src/test,fluxpay-product/src/test,fluxpay-subscription/src/test,fluxpay-billing/src/test,fluxpay-api/src/test \
-            -Dsonar.java.binaries=fluxpay-common/target/classes,fluxpay-security/target/classes,fluxpay-tenant/target/classes,fluxpay-product/target/classes,fluxpay-subscription/target/classes,fluxpay-billing/target/classes,fluxpay-api/target/classes \
-            -Dsonar.java.test.binaries=fluxpay-common/target/test-classes,fluxpay-security/target/test-classes,fluxpay-tenant/target/test-classes,fluxpay-product/target/test-classes,fluxpay-subscription/target/test-classes,fluxpay-billing/target/test-classes,fluxpay-api/target/test-classes \
-            -Dsonar.coverage.jacoco.xmlReportPaths=fluxpay-coverage-report/target/site/jacoco-aggregate/jacoco.xml \
-            -Dsonar.coverage.exclusions=**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/** \
-            -Dsonar.coverage.inclusions=**/service/**,**/repository/**,**/jwt/**,**/session/** \
-            -Dsonar.junit.reportPaths=fluxpay-common/target/surefire-reports,fluxpay-security/target/surefire-reports,fluxpay-tenant/target/surefire-reports,fluxpay-product/target/surefire-reports,fluxpay-subscription/target/surefire-reports,fluxpay-billing/target/surefire-reports,fluxpay-api/target/surefire-reports"
-          
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            mvn sonar:sonar $SONAR_ARGS \
+            mvn sonar:sonar -N \
               -Dsonar.pullrequest.base=${{ github.event.pull_request.base.ref }} \
               -Dsonar.pullrequest.branch=${{ github.head_ref }} \
               -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} \
               -Dsonar.pullrequest.provider=GitHub \
               -Dsonar.pullrequest.github.repository=${{ github.repository }}
           else
-            mvn sonar:sonar $SONAR_ARGS \
+            mvn sonar:sonar -N \
               -Dsonar.branch.name=${{ github.ref_name }}
           fi
 
