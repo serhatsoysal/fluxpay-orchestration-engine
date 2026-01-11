@@ -14,6 +14,7 @@ public class SubscriptionRequest {
     private UUID customerId;
     private String customerEmail;
     private String customerName;
+    @ToString.Exclude
     private Subscription subscription;
     private List<SubscriptionItem> items;
 }
