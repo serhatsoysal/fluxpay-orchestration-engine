@@ -78,6 +78,9 @@ public class SecurityConfig {
                     .toList());
             configuration.setAllowCredentials(corsAllowCredentials);
         } else {
+            // Security: Wildcard pattern only used when CORS_ALLOWED_ORIGINS is not configured
+            // Credentials are disabled to prevent security issues in this fallback case
+            // In production, always configure CORS_ALLOWED_ORIGINS via environment variables
             configuration.addAllowedOriginPattern("*");
             configuration.setAllowCredentials(false);
         }
