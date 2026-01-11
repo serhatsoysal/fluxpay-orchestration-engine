@@ -151,5 +151,107 @@ class DiscountServiceTest {
         verify(couponRepository).save(coupon);
         assertThat(saved).isEqualTo(coupon);
     }
+
+    @Test
+    void calculateDiscount_Percentage_ShouldHandleZeroAmount() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE20");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(20));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(0L, "SAVE20");
+        assertThat(discount).isEqualTo(0L);
+    }
+
+    @Test
+    void calculateDiscount_Percentage_Should100PercentDiscount() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("FREE");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(100));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(10000L, "FREE");
+        assertThat(discount).isEqualTo(10000L);
+    }
+
+    @Test
+    void applyDiscount_ShouldThrowWhenCouponNotFound() {
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> discountService.applyDiscount(UUID.randomUUID(), UUID.randomUUID(), "NOTFOUND", 10000L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Coupon not found");
+    }
+
+    @Test
+    void calculateDiscount_FixedAmount_ShouldHandleZeroAmount() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE10");
+        coupon.setDiscountType(DiscountType.FIXED_AMOUNT);
+        coupon.setDiscountValue(BigDecimal.valueOf(10));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(0L, "SAVE10");
+        assertThat(discount).isEqualTo(0L);
+    }
+
+    @Test
+    void calculateDiscount_FixedAmount_ShouldHandleExactMatch() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE10");
+        coupon.setDiscountType(DiscountType.FIXED_AMOUNT);
+        coupon.setDiscountValue(BigDecimal.valueOf(10));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(1000L, "SAVE10");
+        assertThat(discount).isEqualTo(1000L);
+    }
+
+    @Test
+    void applyDiscount_ShouldIncrementMultipleTimes() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE20");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(20));
+        coupon.setActive(true);
+        coupon.setTimesRedeemed(5);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+        when(discountRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        discountService.applyDiscount(UUID.randomUUID(), UUID.randomUUID(), "SAVE20", 10000L);
+
+        verify(couponRepository).save(argThat(c -> c.getTimesRedeemed() == 6));
+    }
+
+    @Test
+    void calculateDiscount_Percentage_ShouldRoundCorrectly() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE33");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(33.33));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(10000L, "SAVE33");
+        assertThat(discount).isEqualTo(3333L);
+    }
 }
 

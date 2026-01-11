@@ -6,6 +6,7 @@ import com.fluxpay.billing.service.InvoiceService;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.enums.SubscriptionStatus;
 import com.fluxpay.subscription.entity.Subscription;
+import com.fluxpay.subscription.entity.SubscriptionItem;
 import com.fluxpay.subscription.repository.SubscriptionItemRepository;
 import com.fluxpay.subscription.repository.SubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -157,6 +158,109 @@ class InvoiceGenerationSchedulerTest {
         scheduler.detectOverdueInvoices();
 
         verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldGenerateInvoiceWithMultipleItems() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setTenantId(UUID.randomUUID());
+        subscription.setCustomerId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(2, ChronoUnit.DAYS));
+
+        SubscriptionItem item1 = new SubscriptionItem();
+        item1.setId(UUID.randomUUID());
+        item1.setQuantity(5);
+
+        SubscriptionItem item2 = new SubscriptionItem();
+        item2.setId(UUID.randomUUID());
+        item2.setQuantity(3);
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+        when(invoiceRepository.findBySubscriptionId(any())).thenReturn(Collections.emptyList());
+        when(subscriptionItemRepository.findBySubscriptionId(any())).thenReturn(List.of(item1, item2));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService).createInvoice(any(), argThat(items -> items.size() == 2));
+    }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldSkipWhenCurrentPeriodEndAfterTargetDate() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(10, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService, never()).createInvoice(any(), any());
+    }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldSkipWhenInvoiceWithNullPeriodStartExists() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setTenantId(UUID.randomUUID());
+        subscription.setCustomerId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(2, ChronoUnit.DAYS));
+
+        Invoice existingInvoice = new Invoice();
+        existingInvoice.setPeriodStart(null);
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+        when(invoiceRepository.findBySubscriptionId(any())).thenReturn(List.of(existingInvoice));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService).createInvoice(any(), any());
+    }
+
+    @Test
+    void detectOverdueInvoices_ShouldHandleNullDueDate() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setDueDate(null);
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.detectOverdueInvoices();
+
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void detectOverdueInvoices_ShouldHandleDueDateEqualToToday() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setDueDate(LocalDate.now());
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.detectOverdueInvoices();
+
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldSkipDeletedSubscriptions() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(2, ChronoUnit.DAYS));
+        subscription.setDeletedAt(Instant.now());
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService, never()).createInvoice(any(), any());
     }
 }
 
