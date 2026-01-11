@@ -82,27 +82,37 @@ public class SecurityConfig {
             configuration.setAllowCredentials(false);
         }
 
-        List<String> methods = Arrays.asList(corsAllowedMethods.split(","));
-        configuration.setAllowedMethods(methods.stream()
-                .map(String::trim)
-                .filter(StringUtils::hasText)
-                .toList());
-
-        if ("*".equals(corsAllowedHeaders)) {
-            configuration.addAllowedHeader("*");
+        if (corsAllowedMethods != null && !corsAllowedMethods.isEmpty()) {
+            List<String> methods = Arrays.asList(corsAllowedMethods.split(","));
+            configuration.setAllowedMethods(methods.stream()
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toList());
         } else {
+            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        }
+
+        if (corsAllowedHeaders != null && "*".equals(corsAllowedHeaders)) {
+            configuration.addAllowedHeader("*");
+        } else if (corsAllowedHeaders != null && !corsAllowedHeaders.isEmpty()) {
             List<String> headers = Arrays.asList(corsAllowedHeaders.split(","));
             configuration.setAllowedHeaders(headers.stream()
                     .map(String::trim)
                     .filter(StringUtils::hasText)
                     .toList());
+        } else {
+            configuration.addAllowedHeader("*");
         }
 
-        List<String> exposedHeaders = Arrays.asList(corsExposedHeaders.split(","));
-        configuration.setExposedHeaders(exposedHeaders.stream()
-                .map(String::trim)
-                .filter(StringUtils::hasText)
-                .toList());
+        if (corsExposedHeaders != null && !corsExposedHeaders.isEmpty()) {
+            List<String> exposedHeaders = Arrays.asList(corsExposedHeaders.split(","));
+            configuration.setExposedHeaders(exposedHeaders.stream()
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toList());
+        } else {
+            configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        }
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

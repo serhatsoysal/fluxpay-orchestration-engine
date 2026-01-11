@@ -26,6 +26,7 @@
         <module>fluxpay-product</module>
         <module>fluxpay-subscription</module>
         <module>fluxpay-billing</module>
+        <module>fluxpay-notification</module>
         <module>fluxpay-api</module>
         <module>fluxpay-coverage-report</module>
     </modules>
@@ -91,6 +92,11 @@
             <dependency>
                 <groupId>com.fluxpay</groupId>
                 <artifactId>fluxpay-billing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fluxpay</groupId>
+                <artifactId>fluxpay-notification</artifactId>
                 <version>${project.version}</version>
             </dependency>
             

@@ -10,7 +10,9 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>fluxpay-api</artifactId>
+    <artifactId>fluxpay-notification</artifactId>
+    <name>FluxPay Notification</name>
+    <description>Notification module for email and webhook services</description>
 
     <dependencies>
         <dependency>
@@ -21,58 +23,33 @@
             <groupId>com.fluxpay</groupId>
             <artifactId>fluxpay-security</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.fluxpay</groupId>
-            <artifactId>fluxpay-tenant</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fluxpay</groupId>
-            <artifactId>fluxpay-product</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fluxpay</groupId>
-            <artifactId>fluxpay-subscription</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fluxpay</groupId>
-            <artifactId>fluxpay-billing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fluxpay</groupId>
-            <artifactId>fluxpay-notification</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.hypersistence</groupId>
+            <artifactId>hypersistence-utils-hibernate-63</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <dependency>
-            <groupId>me.paulschwarz</groupId>
-            <artifactId>spring-dotenv</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -83,16 +60,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -104,7 +73,6 @@
                         <exclude>**/dto/**</exclude>
                         <exclude>**/enums/**</exclude>
                         <exclude>**/exception/**</exclude>
-                        <exclude>**/FluxPayApplication.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -118,24 +86,8 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>com.fluxpay.api</include>
-                                    </includes>
-                                    <excludes>
-                                        <exclude>com.fluxpay.api.controller</exclude>
-                                    </excludes>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <includes>
-                                        <include>com.fluxpay.api.config</include>
-                                        <include>com.fluxpay.api.dto</include>
+                                        <include>com.fluxpay.notification.config</include>
+                                        <include>com.fluxpay.notification.entity</include>
                                     </includes>
                                     <limits>
                                         <limit>
@@ -148,9 +100,8 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <excludes>
-                                        <exclude>com.fluxpay.api.config</exclude>
-                                        <exclude>com.fluxpay.api.dto</exclude>
-                                        <exclude>com.fluxpay.api</exclude>
+                                        <exclude>com.fluxpay.notification.config</exclude>
+                                        <exclude>com.fluxpay.notification.entity</exclude>
                                     </excludes>
                                     <limits>
                                         <limit>

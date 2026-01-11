@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fluxpay.common.entity.BaseEntity;
 import com.fluxpay.common.enums.BillingInterval;
 import com.fluxpay.common.enums.PricingModel;
+import com.fluxpay.common.enums.UsageAggregationType;
 
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
@@ -58,6 +59,13 @@ public class Price extends BaseEntity {
 
     @Column(name = "trial_period_days")
     private Integer trialPeriodDays;
+
+    @Column(name = "meter_name", length = 100)
+    private String meterName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "aggregation_type")
+    private UsageAggregationType aggregationType;
 
     @Column(nullable = false)
     private Boolean active = true;

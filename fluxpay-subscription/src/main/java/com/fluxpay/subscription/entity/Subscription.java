@@ -65,6 +65,9 @@ public class Subscription extends BaseEntity {
     @Column(name = "proration_behavior", nullable = false, length = 20)
     private String prorationBehavior = "create_prorations";
 
+    @Column(name = "discount_id")
+    private UUID discountId;
+
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadata;

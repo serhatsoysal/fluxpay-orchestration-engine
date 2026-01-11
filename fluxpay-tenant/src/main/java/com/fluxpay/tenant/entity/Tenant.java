@@ -1,6 +1,7 @@
 package com.fluxpay.tenant.entity;
 
 import com.fluxpay.common.entity.BaseEntity;
+import com.fluxpay.common.enums.Currency;
 import com.fluxpay.common.enums.TenantStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,6 +24,10 @@ public class Tenant extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TenantStatus status = TenantStatus.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_currency", nullable = false)
+    private Currency defaultCurrency = Currency.USD;
 
     @Column(name = "subscription_tier", nullable = false, length = 50)
     private String subscriptionTier = "starter";
