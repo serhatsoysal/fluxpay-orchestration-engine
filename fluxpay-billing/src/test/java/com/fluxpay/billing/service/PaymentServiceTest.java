@@ -5,6 +5,7 @@ import com.fluxpay.billing.repository.PaymentRepository;
 import com.fluxpay.common.enums.PaymentStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
 import com.fluxpay.security.context.TenantContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +53,12 @@ class PaymentServiceTest {
         payment.setCurrency("USD");
         payment.setProcessorName("mock");
 
-        TenantContext.setCurrentTenantId(tenantId);
+        TenantContext.setCurrentTenant(tenantId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
