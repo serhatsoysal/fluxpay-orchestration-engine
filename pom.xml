@@ -47,6 +47,7 @@
         <postgresql.version>42.7.2</postgresql.version>
         <tomcat.version>10.1.47</tomcat.version>
         <spring.version>6.2.11</spring.version>
+        <netty.version>4.1.125.Final</netty.version>
         <spring-security.version>6.4.10</spring-security.version>
         <logback.version>1.5.19</logback.version>
         <redis.version>3.2.0</redis.version>
@@ -134,6 +135,16 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-compression</artifactId>
+                <version>4.2.5.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
