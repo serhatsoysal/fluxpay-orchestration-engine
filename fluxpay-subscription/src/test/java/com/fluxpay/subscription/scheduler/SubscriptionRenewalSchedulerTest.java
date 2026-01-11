@@ -70,5 +70,91 @@ class SubscriptionRenewalSchedulerTest {
 
         verify(subscriptionRepository).save(argThat(s -> s.getStatus() == SubscriptionStatus.CANCELED));
     }
+
+    @Test
+    void processTrialExpirations_ShouldSkipActiveTrials() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.TRIALING);
+        subscription.setTrialEnd(Instant.now().plus(1, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processTrialExpirations();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void processTrialExpirations_ShouldSkipDeletedSubscriptions() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.TRIALING);
+        subscription.setTrialEnd(Instant.now().minus(1, ChronoUnit.DAYS));
+        subscription.setDeletedAt(Instant.now());
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processTrialExpirations();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void processSubscriptionRenewals_ShouldSkipWhenPeriodNotEnded() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(1, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processSubscriptionRenewals();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void processSubscriptionRenewals_ShouldSkipDeletedSubscriptions() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().minus(1, ChronoUnit.HOURS));
+        subscription.setDeletedAt(Instant.now());
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processSubscriptionRenewals();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void processCanceledSubscriptions_ShouldSkipWhenCancelAtNotPassed() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCancelAt(Instant.now().plus(1, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processCanceledSubscriptions();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void processCanceledSubscriptions_ShouldSkipAlreadyCanceled() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.CANCELED);
+        subscription.setCancelAt(Instant.now().minus(1, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.processCanceledSubscriptions();
+
+        verify(subscriptionRepository, never()).save(any());
+    }
 }
 

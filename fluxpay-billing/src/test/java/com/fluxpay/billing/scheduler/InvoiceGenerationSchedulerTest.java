@@ -95,5 +95,68 @@ class InvoiceGenerationSchedulerTest {
 
         verify(invoiceRepository).save(argThat(inv -> inv.getStatus() == InvoiceStatus.UNCOLLECTIBLE));
     }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldSkipWhenInvoiceExists() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setTenantId(UUID.randomUUID());
+        subscription.setCustomerId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(2, ChronoUnit.DAYS));
+
+        Invoice existingInvoice = new Invoice();
+        existingInvoice.setPeriodStart(subscription.getCurrentPeriodEnd());
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+        when(invoiceRepository.findBySubscriptionId(any())).thenReturn(List.of(existingInvoice));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService, never()).createInvoice(any(), any());
+    }
+
+    @Test
+    void generateUpcomingRenewalInvoices_ShouldSkipNonActiveSubscriptions() {
+        Subscription subscription = new Subscription();
+        subscription.setId(UUID.randomUUID());
+        subscription.setStatus(SubscriptionStatus.CANCELED);
+        subscription.setCurrentPeriodEnd(Instant.now().plus(2, ChronoUnit.DAYS));
+
+        when(subscriptionRepository.findAll()).thenReturn(List.of(subscription));
+
+        scheduler.generateUpcomingRenewalInvoices();
+
+        verify(invoiceService, never()).createInvoice(any(), any());
+    }
+
+    @Test
+    void detectOverdueInvoices_ShouldSkipNonOpenInvoices() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.detectOverdueInvoices();
+
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void detectOverdueInvoices_ShouldSkipDeletedInvoices() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setDeletedAt(Instant.now());
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.detectOverdueInvoices();
+
+        verify(invoiceRepository, never()).save(any());
+    }
 }
 

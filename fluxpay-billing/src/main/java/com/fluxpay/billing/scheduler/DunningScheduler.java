@@ -42,8 +42,6 @@ public class DunningScheduler {
     @Scheduled(cron = "${DUNNING_RETRY_CRON:0 0 5 * * ?}")
     @Transactional
     public void retryFailedPayments() {
-        LocalDate overdueThreshold = LocalDate.now().minusDays(overdueThresholdDays);
-
         List<Invoice> failedInvoices = invoiceRepository.findAll().stream()
                 .filter(inv -> inv.getStatus() == InvoiceStatus.OPEN)
                 .filter(inv -> inv.getAttemptCount() < maxAttempts)

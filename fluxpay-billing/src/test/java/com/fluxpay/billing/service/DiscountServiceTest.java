@@ -96,5 +96,60 @@ class DiscountServiceTest {
         verify(couponRepository).save(argThat(c -> c.getTimesRedeemed() == 1));
         verify(discountRepository).save(any(Discount.class));
     }
+
+    @Test
+    void calculateDiscount_ShouldThrowWhenCouponNotFound() {
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> discountService.calculateDiscount(10000L, "INVALID"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Coupon not found");
+    }
+
+    @Test
+    void calculateDiscount_ShouldThrowWhenCouponInvalid() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("EXPIRED");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(20));
+        coupon.setActive(false);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        assertThatThrownBy(() -> discountService.calculateDiscount(10000L, "EXPIRED"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("not valid");
+    }
+
+    @Test
+    void calculateDiscount_FixedAmount_ShouldNotExceedAmount() {
+        Coupon coupon = new Coupon();
+        coupon.setId(UUID.randomUUID());
+        coupon.setCode("SAVE100");
+        coupon.setDiscountType(DiscountType.FIXED_AMOUNT);
+        coupon.setDiscountValue(BigDecimal.valueOf(100));
+        coupon.setActive(true);
+
+        when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
+
+        Long discount = discountService.calculateDiscount(5000L, "SAVE100");
+        assertThat(discount).isEqualTo(5000L);
+    }
+
+    @Test
+    void createCoupon_ShouldSaveCoupon() {
+        Coupon coupon = new Coupon();
+        coupon.setCode("NEWCOUPON");
+        coupon.setDiscountType(DiscountType.PERCENTAGE);
+        coupon.setDiscountValue(BigDecimal.valueOf(15));
+
+        when(couponRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Coupon saved = discountService.createCoupon(coupon);
+
+        verify(couponRepository).save(coupon);
+        assertThat(saved).isEqualTo(coupon);
+    }
 }
 

@@ -35,7 +35,7 @@ public class DiscountService {
         }
 
         if (coupon.getDiscountType() == DiscountType.FIXED_AMOUNT) {
-            Long discountAmount = coupon.getDiscountValue()
+            long discountAmount = coupon.getDiscountValue()
                     .multiply(BigDecimal.valueOf(100))
                     .longValue();
             return Math.min(discountAmount, amount);

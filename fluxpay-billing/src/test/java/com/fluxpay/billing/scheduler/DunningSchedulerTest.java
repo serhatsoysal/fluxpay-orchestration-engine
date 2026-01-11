@@ -13,7 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,6 +61,7 @@ class DunningSchedulerTest {
         invoice.setDueDate(LocalDate.now().minusDays(1));
         invoice.setAmountDue(10000L);
         invoice.setCurrency("USD");
+        invoice.setNextPaymentAttempt(null);
 
         Payment payment = new Payment();
         payment.setId(UUID.randomUUID());
@@ -71,6 +75,170 @@ class DunningSchedulerTest {
 
         verify(paymentService).createPayment(any(Payment.class));
         verify(invoiceRepository).save(any(Invoice.class));
+    }
+
+    @Test
+    void retryFailedPayments_ShouldNotRetryWhenAttemptCountExceedsMax() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(3);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
+    }
+
+    @Test
+    void retryFailedPayments_ShouldNotRetryWhenDueDateNotPassed() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().plusDays(1));
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
+    }
+
+    @Test
+    void retryFailedPayments_ShouldNotRetryWhenStatusNotOpen() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
+    }
+
+    @Test
+    void retryFailedPayments_ShouldHandleFailedPayment() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setTenantId(UUID.randomUUID());
+        invoice.setCustomerId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setAmountDue(10000L);
+        invoice.setCurrency("USD");
+        invoice.setTotal(10000L);
+        invoice.setNextPaymentAttempt(null);
+
+        Payment payment = new Payment();
+        payment.setId(UUID.randomUUID());
+        payment.setStatus(PaymentStatus.FAILED);
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+        when(paymentService.createPayment(any())).thenReturn(payment);
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService).createPayment(any(Payment.class));
+        verify(invoiceRepository).save(any(Invoice.class));
+    }
+
+    @Test
+    void retryFailedPayments_ShouldHandleException() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setTenantId(UUID.randomUUID());
+        invoice.setCustomerId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setAmountDue(10000L);
+        invoice.setCurrency("USD");
+        invoice.setNextPaymentAttempt(null);
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+        when(paymentService.createPayment(any())).thenThrow(new RuntimeException("Payment failed"));
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService).createPayment(any(Payment.class));
+        verify(invoiceRepository).save(any(Invoice.class));
+    }
+
+    @Test
+    void retryFailedPayments_ShouldMarkAsUncollectibleWhenMaxAttemptsReached() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setTenantId(UUID.randomUUID());
+        invoice.setCustomerId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(2);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setAmountDue(10000L);
+        invoice.setCurrency("USD");
+        invoice.setTotal(10000L);
+        invoice.setNextPaymentAttempt(null);
+
+        Payment payment = new Payment();
+        payment.setId(UUID.randomUUID());
+        payment.setStatus(PaymentStatus.FAILED);
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+        when(paymentService.createPayment(any())).thenReturn(payment);
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        scheduler.retryFailedPayments();
+
+        verify(invoiceRepository).save(argThat(inv -> inv.getAttemptCount() == 3 && inv.getStatus() == InvoiceStatus.UNCOLLECTIBLE));
+    }
+
+    @Test
+    void retryFailedPayments_ShouldSkipWhenNextAttemptNotDue() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setNextPaymentAttempt(Instant.now().plus(1, ChronoUnit.DAYS));
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
+    }
+
+    @Test
+    void retryFailedPayments_ShouldSkipDeletedInvoices() {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setAttemptCount(1);
+        invoice.setDueDate(LocalDate.now().minusDays(1));
+        invoice.setDeletedAt(Instant.now());
+
+        when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
+    }
+
+    @Test
+    void retryFailedPayments_ShouldHandleEmptyList() {
+        when(invoiceRepository.findAll()).thenReturn(Collections.emptyList());
+
+        scheduler.retryFailedPayments();
+
+        verify(paymentService, never()).createPayment(any());
     }
 }
 
