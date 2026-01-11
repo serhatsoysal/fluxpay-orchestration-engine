@@ -25,7 +25,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PROCESSING);
         Payment savedPayment = paymentRepository.save(payment);
         
-        boolean success = processPaymentWithProcessor(savedPayment);
+        boolean success = processPaymentWithProcessor();
         
         if (success) {
             savedPayment.setStatus(PaymentStatus.SUCCEEDED);
@@ -57,7 +57,7 @@ public class PaymentService {
         return paymentRepository.findByInvoiceId(invoiceId);
     }
 
-    private boolean processPaymentWithProcessor(Payment payment) {
+    private boolean processPaymentWithProcessor() {
         return Math.random() > 0.1;
     }
 }

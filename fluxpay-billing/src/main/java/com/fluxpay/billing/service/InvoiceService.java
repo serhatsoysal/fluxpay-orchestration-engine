@@ -124,7 +124,11 @@ public class InvoiceService {
         if (lastInvoice != null) {
             String lastNumber = lastInvoice.getInvoiceNumber().replaceAll("\\D+", "");
             if (!lastNumber.isEmpty()) {
-                nextNumber = Integer.parseInt(lastNumber) + 1;
+                try {
+                    nextNumber = Integer.parseInt(lastNumber) + 1;
+                } catch (NumberFormatException e) {
+                    nextNumber = 1;
+                }
             }
         }
 
