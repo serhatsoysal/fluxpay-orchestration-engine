@@ -159,4 +159,87 @@ class SecurityConfigTest {
         assertThat(config.getAllowedHeaders()).containsExactly("Content-Type", "Authorization");
         assertThat(config.getExposedHeaders()).containsExactly("Authorization", "X-Custom");
     }
+
+    @Test
+    void passwordEncoder_ShouldEncryptPasswordsCorrectly() {
+        PasswordEncoder encoder = securityConfig.passwordEncoder();
+        String rawPassword = "mySecurePassword123";
+        
+        String encodedPassword = encoder.encode(rawPassword);
+        
+        assertThat(encodedPassword).isNotEqualTo(rawPassword);
+        assertThat(encoder.matches(rawPassword, encodedPassword)).isTrue();
+        assertThat(encoder.matches("wrongPassword", encodedPassword)).isFalse();
+    }
+
+    @Test
+    void corsConfigurationSource_WithEmptyMethodString_UsesDefaults() throws Exception {
+        setField("corsAllowedOrigins", "");
+        setField("corsAllowedMethods", "");
+        setField("corsAllowedHeaders", "*");
+        setField("corsExposedHeaders", "Authorization");
+
+        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
+
+        assertThat(corsSource).isNotNull();
+        CorsConfiguration config = corsSource.getCorsConfiguration(request);
+        assertThat(config.getAllowedMethods()).contains("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
+    }
+
+    @Test
+    void corsConfigurationSource_WithEmptyHeaderString_UsesWildcard() throws Exception {
+        setField("corsAllowedOrigins", "");
+        setField("corsAllowedMethods", "GET,POST");
+        setField("corsAllowedHeaders", "");
+        setField("corsExposedHeaders", "Authorization");
+
+        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
+
+        assertThat(corsSource).isNotNull();
+        CorsConfiguration config = corsSource.getCorsConfiguration(request);
+        assertThat(config.getAllowedHeaders()).contains("*");
+    }
+
+    @Test
+    void corsConfigurationSource_WithEmptyExposedHeaders_UsesDefault() throws Exception {
+        setField("corsAllowedOrigins", "");
+        setField("corsAllowedMethods", "GET,POST");
+        setField("corsAllowedHeaders", "*");
+        setField("corsExposedHeaders", "");
+
+        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
+
+        assertThat(corsSource).isNotNull();
+        CorsConfiguration config = corsSource.getCorsConfiguration(request);
+        assertThat(config.getExposedHeaders()).contains("Authorization");
+    }
+
+    @Test
+    void corsConfigurationSource_WithOriginsContainingSpaces_ShouldTrimSpaces() throws Exception {
+        setField("corsAllowedOrigins", " https://example.com , https://test.com ");
+        setField("corsAllowedMethods", "GET,POST");
+        setField("corsAllowedHeaders", "*");
+        setField("corsExposedHeaders", "Authorization");
+        setField("corsAllowCredentials", true);
+
+        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
+
+        assertThat(corsSource).isNotNull();
+        CorsConfiguration config = corsSource.getCorsConfiguration(request);
+        assertThat(config.getAllowedOrigins()).containsExactly("https://example.com", "https://test.com");
+    }
+
+    @Test
+    void corsConfigurationSource_WithMethodsContainingSpaces_ShouldTrimSpaces() throws Exception {
+        setField("corsAllowedOrigins", "");
+        setField("corsAllowedMethods", " GET , POST , PUT ");
+        setField("corsAllowedHeaders", "*");
+        setField("corsExposedHeaders", "Authorization");
+
+        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
+
+        assertThat(corsSource).isNotNull();
+        CorsConfiguration config = corsSource.getCorsConfiguration(request);
+        assertThat(config.getAllowedMethods()).containsExactly("GET", "POST", "PUT");
+    }
 }
