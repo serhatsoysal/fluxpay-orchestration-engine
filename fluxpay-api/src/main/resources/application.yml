@@ -8,6 +8,18 @@ spring:
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  
   jpa:
     hibernate:
       ddl-auto: update
@@ -32,15 +44,15 @@ jwt:
 
 session:
   ttl:
-    access-token: 1h
-    refresh-token: 30d
+    access-token: ${SESSION_ACCESS_TOKEN_TTL:1h}
+    refresh-token: ${SESSION_REFRESH_TOKEN_TTL:30d}
   concurrent:
-    max-sessions: 5
+    max-sessions: ${SESSION_MAX_SESSIONS:5}
   security:
-    fingerprint-verification: true
-    anomaly-detection: true
+    fingerprint-verification: ${SESSION_FINGERPRINT_VERIFICATION:true}
+    anomaly-detection: ${SESSION_ANOMALY_DETECTION:true}
   audit:
-    retention-days: 365
+    retention-days: ${SESSION_AUDIT_RETENTION_DAYS:365}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -62,13 +74,50 @@ resilience4j:
     instances:
       sessionRepository:
         registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        slidingWindowSize: ${CIRCUIT_BREAKER_SLIDING_WINDOW_SIZE:10}
+        minimumNumberOfCalls: ${CIRCUIT_BREAKER_MIN_CALLS:5}
+        failureRateThreshold: ${CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD:50}
+        waitDurationInOpenState: ${CIRCUIT_BREAKER_WAIT_DURATION:10s}
   retry:
     instances:
       sessionRepository:
-        maxAttempts: 3
-        waitDuration: 1s
+        maxAttempts: ${RETRY_MAX_ATTEMPTS:3}
+        waitDuration: ${RETRY_WAIT_DURATION:1s}
+
+scheduler:
+  pool-size: ${SCHEDULER_POOL_SIZE:10}
+  await-termination-seconds: ${SCHEDULER_AWAIT_TERMINATION_SECONDS:60}
+
+invoice:
+  generation:
+    days-ahead: ${INVOICE_GENERATION_DAYS_AHEAD:3}
+    cron: ${INVOICE_GENERATION_CRON:0 0 1 * * ?}
+  overdue:
+    detection-cron: ${INVOICE_OVERDUE_DETECTION_CRON:0 30 1 * * ?}
+  due-days: ${INVOICE_DUE_DAYS:14}
+  period-days: ${INVOICE_PERIOD_DAYS:30}
+  default-currency: ${INVOICE_DEFAULT_CURRENCY:USD}
+  item:
+    unit-amount: ${INVOICE_ITEM_UNIT_AMOUNT:1000}
+
+dunning:
+  retry:
+    cron: ${DUNNING_RETRY_CRON:0 0 5 * * ?}
+    interval-days: ${DUNNING_RETRY_INTERVAL_DAYS:3}
+  max-attempts: ${DUNNING_MAX_ATTEMPTS:3}
+  overdue-threshold-days: ${DUNNING_OVERDUE_THRESHOLD_DAYS:3}
+  payment-processor-name: ${DUNNING_PAYMENT_PROCESSOR_NAME:mock}
+
+subscription:
+  default-period-days: ${SUBSCRIPTION_DEFAULT_PERIOD_DAYS:30}
+  trial-expiration:
+    cron: ${SUBSCRIPTION_TRIAL_EXPIRATION_CRON:0 0 2 * * ?}
+  renewal:
+    cron: ${SUBSCRIPTION_RENEWAL_CRON:0 0 3 * * ?}
+  cancellation:
+    cron: ${SUBSCRIPTION_CANCELLATION_CRON:0 0 4 * * ?}
+
+webhook:
+  timeout-seconds: ${WEBHOOK_TIMEOUT_SECONDS:30}
+  connect-timeout-seconds: ${WEBHOOK_CONNECT_TIMEOUT_SECONDS:10}
 

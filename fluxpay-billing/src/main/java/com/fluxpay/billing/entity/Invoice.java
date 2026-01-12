@@ -84,6 +84,10 @@ public class Invoice extends BaseEntity {
     private String idempotencyKey;
 
     @Type(JsonBinaryType.class)
+    @Column(name = "tax_details", columnDefinition = "jsonb")
+    private Map<String, Object> taxDetails;
+
+    @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metadata;
 

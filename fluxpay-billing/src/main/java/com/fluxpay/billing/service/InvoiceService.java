@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -21,17 +22,43 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
+    private final TaxService taxService;
 
     public InvoiceService(
             InvoiceRepository invoiceRepository,
-            InvoiceItemRepository invoiceItemRepository) {
+            InvoiceItemRepository invoiceItemRepository,
+            TaxService taxService) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceItemRepository = invoiceItemRepository;
+        this.taxService = taxService;
     }
 
     public Invoice createInvoice(Invoice invoice, List<InvoiceItem> items) {
         if (invoice.getInvoiceNumber() == null) {
             invoice.setInvoiceNumber(generateInvoiceNumber());
+        }
+
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        for (InvoiceItem item : items) {
+            item.setInvoiceId(savedInvoice.getId());
+            invoiceItemRepository.save(item);
+        }
+
+        return savedInvoice;
+    }
+
+    public Invoice createInvoiceWithTax(Invoice invoice, List<InvoiceItem> items, String countryCode) {
+        if (invoice.getInvoiceNumber() == null) {
+            invoice.setInvoiceNumber(generateInvoiceNumber());
+        }
+
+        if (countryCode != null) {
+            Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
+            invoice.setTax((Long) taxCalculation.get("taxAmount"));
+            invoice.setTaxDetails(taxCalculation);
+            invoice.setTotal(invoice.getSubtotal() + invoice.getTax());
+            invoice.setAmountDue(invoice.getTotal());
         }
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
@@ -97,7 +124,11 @@ public class InvoiceService {
         if (lastInvoice != null) {
             String lastNumber = lastInvoice.getInvoiceNumber().replaceAll("\\D+", "");
             if (!lastNumber.isEmpty()) {
-                nextNumber = Integer.parseInt(lastNumber) + 1;
+                try {
+                    nextNumber = Integer.parseInt(lastNumber) + 1;
+                } catch (NumberFormatException e) {
+                    nextNumber = 1;
+                }
             }
         }
 

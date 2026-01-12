@@ -26,6 +26,7 @@
         <module>fluxpay-product</module>
         <module>fluxpay-subscription</module>
         <module>fluxpay-billing</module>
+        <module>fluxpay-notification</module>
         <module>fluxpay-api</module>
         <module>fluxpay-coverage-report</module>
     </modules>
@@ -44,8 +45,9 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         
         <postgresql.version>42.7.2</postgresql.version>
-        <tomcat.version>10.1.45</tomcat.version>
+        <tomcat.version>10.1.47</tomcat.version>
         <spring.version>6.2.11</spring.version>
+        <netty.version>4.1.125.Final</netty.version>
         <spring-security.version>6.4.10</spring-security.version>
         <logback.version>1.5.19</logback.version>
         <redis.version>3.2.0</redis.version>
@@ -93,6 +95,11 @@
                 <artifactId>fluxpay-billing</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fluxpay</groupId>
+                <artifactId>fluxpay-notification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -123,6 +130,21 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-compression</artifactId>
+                <version>4.2.5.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
@@ -304,6 +326,7 @@
                         <sonar.organization>serhatsoysal</sonar.organization>
                         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
                         <sonar.exclusions>**/dto/**,**/entity/**,**/config/**,**/exception/**,**/enums/**,**/model/**,**/NotificationController.java,**/Notification*.java,**/RefreshToken*.java,**/SessionInfoResponse.java,**/V8__create_session_tables.sql</sonar.exclusions>
+                        <sonar.coverage.inclusions>**/service/**,**/repository/**,**/jwt/**,**/session/**,**/scheduler/**,**/controller/**</sonar.coverage.inclusions>
                     </configuration>
                 </plugin>
                 
