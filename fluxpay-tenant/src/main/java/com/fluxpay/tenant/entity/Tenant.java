@@ -26,7 +26,7 @@ public class Tenant extends BaseEntity {
     private TenantStatus status = TenantStatus.ACTIVE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "default_currency", nullable = false)
+    @Column(name = "default_currency")
     private Currency defaultCurrency = Currency.USD;
 
     @Column(name = "subscription_tier", nullable = false, length = 50)
