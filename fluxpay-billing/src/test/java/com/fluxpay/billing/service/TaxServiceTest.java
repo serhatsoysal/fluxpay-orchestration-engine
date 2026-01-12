@@ -60,9 +60,10 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 2000L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(20));
-        assertThat(result).containsEntry("taxType", "VAT");
+        assertThat(result)
+                .containsEntry("taxAmount", 2000L)
+                .containsEntry("taxRate", BigDecimal.valueOf(20))
+                .containsEntry("taxType", "VAT");
     }
 
     @Test
@@ -72,9 +73,10 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 0L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.ZERO);
-        assertThat(result).containsEntry("taxType", "NONE");
+        assertThat(result)
+                .containsEntry("taxAmount", 0L)
+                .containsEntry("taxRate", BigDecimal.ZERO)
+                .containsEntry("taxType", "NONE");
     }
 
     @Test
@@ -111,9 +113,10 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(0L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 0L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(20));
-        assertThat(result).containsEntry("taxType", "VAT");
+        assertThat(result)
+                .containsEntry("taxAmount", 0L)
+                .containsEntry("taxRate", BigDecimal.valueOf(20))
+                .containsEntry("taxType", "VAT");
     }
 
     @Test
@@ -132,8 +135,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(1000000L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 150000L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(15));
+        assertThat(result)
+                .containsEntry("taxAmount", 150000L)
+                .containsEntry("taxRate", BigDecimal.valueOf(15));
     }
 
     @Test
@@ -152,8 +156,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 775L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(7.75));
+        assertThat(result)
+                .containsEntry("taxAmount", 775L)
+                .containsEntry("taxRate", BigDecimal.valueOf(7.75));
     }
 
     @Test
@@ -173,11 +178,12 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result).containsEntry("taxAmount", 1000L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(10));
-        assertThat(result).containsEntry("taxType", "SALES_TAX");
-        assertThat(result).containsEntry("taxRateId", taxRateId);
-        assertThat(result).containsEntry("taxRateName", "State Tax");
+        assertThat(result)
+                .containsEntry("taxAmount", 1000L)
+                .containsEntry("taxRate", BigDecimal.valueOf(10))
+                .containsEntry("taxType", "SALES_TAX")
+                .containsEntry("taxRateId", taxRateId)
+                .containsEntry("taxRateName", "State Tax");
     }
 
     @Test
@@ -196,8 +202,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "SE");
 
-        assertThat(result).containsEntry("taxAmount", 2500L);
-        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(25));
+        assertThat(result)
+                .containsEntry("taxAmount", 2500L)
+                .containsEntry("taxRate", BigDecimal.valueOf(25));
     }
 
     @Test
