@@ -4,7 +4,6 @@ import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.repository.InvoiceItemRepository;
 import com.fluxpay.billing.repository.InvoiceRepository;
-import com.fluxpay.billing.service.TaxService;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
 import com.fluxpay.security.context.TenantContext;
@@ -202,10 +201,163 @@ class InvoiceServiceTest {
     @Test
     void getInvoiceById_ShouldThrowWhenDeleted() {
         invoice.setDeletedAt(java.time.Instant.now());
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        UUID invoiceId = invoice.getId();
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
 
-        assertThatThrownBy(() -> invoiceService.getInvoiceById(invoice.getId()))
+        assertThatThrownBy(() -> invoiceService.getInvoiceById(invoiceId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void createInvoiceWithTax_WithNullCountryCode_ShouldNotCalculateTax() {
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(10000L);
+        newInvoice.setTotal(10000L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        TaxService taxService = mock(TaxService.class);
+        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService);
+
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = service.createInvoiceWithTax(newInvoice, items, null);
+
+        verify(taxService, never()).calculateTax(anyLong(), any());
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void createInvoice_WithExistingInvoiceNumber_ShouldNotGenerateNew() {
+        Invoice newInvoice = new Invoice();
+        newInvoice.setInvoiceNumber("CUSTOM-001");
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(100L);
+        newInvoice.setTotal(100L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.createInvoice(newInvoice, items);
+
+        assertThat(result.getInvoiceNumber()).isEqualTo("CUSTOM-001");
+        verify(invoiceRepository, never()).findTopByTenantIdOrderByCreatedAtDesc(any());
+    }
+
+    @Test
+    void createInvoice_WithExistingInvoice_ShouldIncrementInvoiceNumber() {
+        Invoice lastInvoice = new Invoice();
+        lastInvoice.setInvoiceNumber("INV-000005");
+
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(100L);
+        newInvoice.setTotal(100L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.of(lastInvoice));
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.createInvoice(newInvoice, items);
+
+        assertThat(result.getInvoiceNumber()).isEqualTo("INV-000006");
+    }
+
+    @Test
+    void createInvoice_WithInvalidLastInvoiceNumber_ShouldStartFromOne() {
+        Invoice lastInvoice = new Invoice();
+        lastInvoice.setInvoiceNumber("INVALID");
+
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(100L);
+        newInvoice.setTotal(100L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.of(lastInvoice));
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.createInvoice(newInvoice, items);
+
+        assertThat(result.getInvoiceNumber()).isEqualTo("INV-000001");
+    }
+
+    @Test
+    void createInvoice_FirstInvoice_ShouldGenerateINV000001() {
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(100L);
+        newInvoice.setTotal(100L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.createInvoice(newInvoice, items);
+
+        assertThat(result.getInvoiceNumber()).isEqualTo("INV-000001");
+    }
+
+    @Test
+    void createInvoice_ShouldSaveAllInvoiceItems() {
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(100L);
+        newInvoice.setTotal(100L);
+
+        InvoiceItem item1 = new InvoiceItem();
+        InvoiceItem item2 = new InvoiceItem();
+        InvoiceItem item3 = new InvoiceItem();
+        List<InvoiceItem> items = Arrays.asList(item1, item2, item3);
+
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = invoiceService.createInvoice(newInvoice, items);
+
+        verify(invoiceItemRepository, times(3)).save(any(InvoiceItem.class));
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void createInvoiceWithTax_ShouldSetTaxDetails() {
+        Invoice newInvoice = new Invoice();
+        newInvoice.setCustomerId(customerId);
+        newInvoice.setSubtotal(10000L);
+        newInvoice.setTotal(10000L);
+
+        List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
+
+        TaxService taxService = mock(TaxService.class);
+        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService);
+
+        java.util.Map<String, Object> taxDetails = new java.util.HashMap<>();
+        taxDetails.put("taxAmount", 2000L);
+        taxDetails.put("taxRate", 20.0);
+        taxDetails.put("taxType", "VAT");
+        when(taxService.calculateTax(anyLong(), anyString())).thenReturn(taxDetails);
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(invoiceItemRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Invoice result = service.createInvoiceWithTax(newInvoice, items, "US");
+
+        assertThat(result.getTax()).isEqualTo(2000L);
+        assertThat(result.getTaxDetails()).isEqualTo(taxDetails);
+        assertThat(result.getTotal()).isEqualTo(12000L);
+        assertThat(result.getAmountDue()).isEqualTo(12000L);
     }
 }
 
