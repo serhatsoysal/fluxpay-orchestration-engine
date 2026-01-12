@@ -45,7 +45,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         
         <postgresql.version>42.7.2</postgresql.version>
-        <tomcat.version>10.1.47</tomcat.version>
+        <tomcat.version>11.0.15</tomcat.version>
         <spring.version>6.2.11</spring.version>
         <netty.version>4.1.125.Final</netty.version>
         <spring-security.version>6.4.10</spring-security.version>
