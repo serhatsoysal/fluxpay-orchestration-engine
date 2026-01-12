@@ -4,14 +4,20 @@ import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.repository.InvoiceItemRepository;
 import com.fluxpay.billing.repository.InvoiceRepository;
+import com.fluxpay.common.dto.InvoiceStats;
+import com.fluxpay.common.dto.PageResponse;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
 import com.fluxpay.security.context.TenantContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -90,6 +96,22 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<Invoice> getInvoices(int page, int size, InvoiceStatus status) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Invoice> invoicePage = invoiceRepository.findByTenantIdAndStatus(tenantId, status, pageable);
+        
+        return new PageResponse<>(
+                invoicePage.getContent(),
+                invoicePage.getNumber(),
+                invoicePage.getSize(),
+                invoicePage.getTotalElements(),
+                invoicePage.getTotalPages(),
+                invoicePage.isLast()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<InvoiceItem> getInvoiceItems(UUID invoiceId) {
         return invoiceItemRepository.findByInvoiceId(invoiceId);
     }
@@ -133,6 +155,35 @@ public class InvoiceService {
         }
 
         return String.format("INV-%06d", nextNumber);
+    }
+
+    @Transactional(readOnly = true)
+    public InvoiceStats getInvoiceStats() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        LocalDate today = LocalDate.now();
+        
+        Long totalCount = invoiceRepository.countByTenantId(tenantId);
+        Long totalAmount = invoiceRepository.sumTotalByTenantId(tenantId);
+        Long totalAmountDue = invoiceRepository.sumAmountDueByTenantId(tenantId);
+        Long totalAmountPaid = invoiceRepository.sumAmountPaidByTenantId(tenantId);
+        Long overdueCount = invoiceRepository.countOverdueByTenantId(tenantId, today);
+        Long overdueAmount = invoiceRepository.sumOverdueAmountByTenantId(tenantId, today);
+        
+        Map<InvoiceStatus, Long> countByStatus = new HashMap<>();
+        for (InvoiceStatus status : InvoiceStatus.values()) {
+            Long count = invoiceRepository.countByTenantIdAndStatus(tenantId, status);
+            countByStatus.put(status, count);
+        }
+        
+        return new InvoiceStats(
+                totalCount,
+                totalAmount,
+                totalAmountDue,
+                totalAmountPaid,
+                countByStatus,
+                overdueCount,
+                overdueAmount
+        );
     }
 }
 
