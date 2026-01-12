@@ -60,9 +60,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(2000L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(20));
-        assertThat(result.get("taxType")).isEqualTo("VAT");
+        assertThat(result).containsEntry("taxAmount", 2000L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(20));
+        assertThat(result).containsEntry("taxType", "VAT");
     }
 
     @Test
@@ -72,9 +72,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(0L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.ZERO);
-        assertThat(result.get("taxType")).isEqualTo("NONE");
+        assertThat(result).containsEntry("taxAmount", 0L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.ZERO);
+        assertThat(result).containsEntry("taxType", "NONE");
     }
 
     @Test
@@ -111,9 +111,9 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(0L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(0L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(20));
-        assertThat(result.get("taxType")).isEqualTo("VAT");
+        assertThat(result).containsEntry("taxAmount", 0L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(20));
+        assertThat(result).containsEntry("taxType", "VAT");
     }
 
     @Test
@@ -132,8 +132,8 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(1000000L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(150000L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(15));
+        assertThat(result).containsEntry("taxAmount", 150000L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(15));
     }
 
     @Test
@@ -152,8 +152,8 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(775L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(7.75));
+        assertThat(result).containsEntry("taxAmount", 775L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(7.75));
     }
 
     @Test
@@ -173,11 +173,11 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(1000L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(10));
-        assertThat(result.get("taxType")).isEqualTo("SALES_TAX");
-        assertThat(result.get("taxRateId")).isEqualTo(taxRateId);
-        assertThat(result.get("taxRateName")).isEqualTo("State Tax");
+        assertThat(result).containsEntry("taxAmount", 1000L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(10));
+        assertThat(result).containsEntry("taxType", "SALES_TAX");
+        assertThat(result).containsEntry("taxRateId", taxRateId);
+        assertThat(result).containsEntry("taxRateName", "State Tax");
     }
 
     @Test
@@ -196,8 +196,8 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(10000L, "SE");
 
-        assertThat(result.get("taxAmount")).isEqualTo(2500L);
-        assertThat(result.get("taxRate")).isEqualTo(BigDecimal.valueOf(25));
+        assertThat(result).containsEntry("taxAmount", 2500L);
+        assertThat(result).containsEntry("taxRate", BigDecimal.valueOf(25));
     }
 
     @Test
@@ -216,7 +216,7 @@ class TaxServiceTest {
 
         Map<String, Object> result = taxService.calculateTax(9999L, "US");
 
-        assertThat(result.get("taxAmount")).isEqualTo(1332L);
+        assertThat(result).containsEntry("taxAmount", 1332L);
     }
 }
 

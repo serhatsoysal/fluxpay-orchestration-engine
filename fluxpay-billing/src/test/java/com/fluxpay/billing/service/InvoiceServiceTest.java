@@ -4,7 +4,6 @@ import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.repository.InvoiceItemRepository;
 import com.fluxpay.billing.repository.InvoiceRepository;
-import com.fluxpay.billing.service.TaxService;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
 import com.fluxpay.security.context.TenantContext;
@@ -202,9 +201,10 @@ class InvoiceServiceTest {
     @Test
     void getInvoiceById_ShouldThrowWhenDeleted() {
         invoice.setDeletedAt(java.time.Instant.now());
-        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        UUID invoiceId = invoice.getId();
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
 
-        assertThatThrownBy(() -> invoiceService.getInvoiceById(invoice.getId()))
+        assertThatThrownBy(() -> invoiceService.getInvoiceById(invoiceId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

@@ -4,6 +4,9 @@ import com.fluxpay.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -103,25 +106,13 @@ class SecurityConfigTest {
         assertThat(config.getAllowedMethods()).contains("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
     }
 
-    @Test
-    void corsConfigurationSource_WithWildcardHeaders_SetsWildcard() throws Exception {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = "*")
+    void corsConfigurationSource_WithWildcardOrNullHeaders_SetsWildcard(String headersValue) throws Exception {
         setField("corsAllowedOrigins", "");
         setField("corsAllowedMethods", "GET,POST");
-        setField("corsAllowedHeaders", "*");
-        setField("corsExposedHeaders", "Authorization");
-
-        CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
-
-        assertThat(corsSource).isNotNull();
-        CorsConfiguration config = corsSource.getCorsConfiguration(request);
-        assertThat(config.getAllowedHeaders()).contains("*");
-    }
-
-    @Test
-    void corsConfigurationSource_WithNullHeaders_UsesWildcard() throws Exception {
-        setField("corsAllowedOrigins", "");
-        setField("corsAllowedMethods", "GET,POST");
-        setField("corsAllowedHeaders", null);
+        setField("corsAllowedHeaders", headersValue);
         setField("corsExposedHeaders", "Authorization");
 
         CorsConfigurationSource corsSource = securityConfig.corsConfigurationSource();
