@@ -31,6 +31,18 @@ public class InvoiceController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<InvoiceStats> getInvoiceStats() {
+        InvoiceStats stats = invoiceService.getInvoiceStats();
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<Invoice>> getInvoicesByCustomer(@PathVariable UUID customerId) {
+        List<Invoice> invoices = invoiceService.getInvoicesByCustomer(customerId);
+        return ResponseEntity.ok(invoices);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Invoice> getInvoice(@PathVariable UUID id) {
         Invoice invoice = invoiceService.getInvoiceById(id);
@@ -41,18 +53,6 @@ public class InvoiceController {
     public ResponseEntity<List<InvoiceItem>> getInvoiceItems(@PathVariable UUID id) {
         List<InvoiceItem> items = invoiceService.getInvoiceItems(id);
         return ResponseEntity.ok(items);
-    }
-
-    @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<Invoice>> getInvoicesByCustomer(@PathVariable UUID customerId) {
-        List<Invoice> invoices = invoiceService.getInvoicesByCustomer(customerId);
-        return ResponseEntity.ok(invoices);
-    }
-
-    @GetMapping("/stats")
-    public ResponseEntity<InvoiceStats> getInvoiceStats() {
-        InvoiceStats stats = invoiceService.getInvoiceStats();
-        return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/{id}/finalize")
