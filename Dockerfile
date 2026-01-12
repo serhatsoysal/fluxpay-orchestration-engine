@@ -17,6 +17,7 @@ COPY fluxpay-tenant/src fluxpay-tenant/src
 COPY fluxpay-product/src fluxpay-product/src
 COPY fluxpay-subscription/src fluxpay-subscription/src
 COPY fluxpay-billing/src fluxpay-billing/src
+COPY fluxpay-notification/src fluxpay-notification/src
 COPY fluxpay-api/src fluxpay-api/src
 RUN mvn clean package -DskipTests -pl fluxpay-api -am
 
