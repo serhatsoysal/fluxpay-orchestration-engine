@@ -48,7 +48,7 @@
         <tomcat.version>10.1.47</tomcat.version>
         <spring.version>6.2.11</spring.version>
         <netty.version>4.1.125.Final</netty.version>
-        <spring-security.version>6.4.10</spring-security.version>
+        <spring-security.version>7.0.2</spring-security.version>
         <logback.version>1.5.19</logback.version>
         <redis.version>3.2.0</redis.version>
         <jwt.version>0.12.5</jwt.version>
