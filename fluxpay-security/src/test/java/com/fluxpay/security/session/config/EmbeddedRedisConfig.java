@@ -16,6 +16,7 @@ public class EmbeddedRedisConfig {
     private GenericContainer<?> redisContainer;
 
     @PostConstruct
+    @SuppressWarnings("resource")
     public void startRedis() {
         try {
             redisContainer = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
@@ -42,7 +43,8 @@ public class EmbeddedRedisConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         String host = redisContainer != null ? redisContainer.getHost() : "localhost";
-        int port = redisContainer != null ? redisContainer.getMappedPort(6379) : 6379;
+        Integer mappedPort = redisContainer != null ? redisContainer.getMappedPort(6379) : null;
+        int port = mappedPort != null ? mappedPort : 6379;
         LettuceConnectionFactory factory = new LettuceConnectionFactory(host, port);
         factory.afterPropertiesSet();
         return factory;
