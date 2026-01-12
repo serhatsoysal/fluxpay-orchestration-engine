@@ -7,6 +7,7 @@ COPY fluxpay-tenant/pom.xml fluxpay-tenant/
 COPY fluxpay-product/pom.xml fluxpay-product/
 COPY fluxpay-subscription/pom.xml fluxpay-subscription/
 COPY fluxpay-billing/pom.xml fluxpay-billing/
+COPY fluxpay-notification/pom.xml fluxpay-notification/
 COPY fluxpay-api/pom.xml fluxpay-api/
 COPY fluxpay-coverage-report/pom.xml fluxpay-coverage-report/
 RUN mvn dependency:go-offline -B
