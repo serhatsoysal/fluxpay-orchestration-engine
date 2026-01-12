@@ -3,6 +3,9 @@ package com.fluxpay.api.controller;
 import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.service.InvoiceService;
+import com.fluxpay.common.dto.InvoiceStats;
+import com.fluxpay.common.dto.PageResponse;
+import com.fluxpay.common.enums.InvoiceStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +20,15 @@ public class InvoiceController {
 
     public InvoiceController(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResponse<Invoice>> getInvoices(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) InvoiceStatus status) {
+        PageResponse<Invoice> response = invoiceService.getInvoices(page, size, status);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -35,6 +47,12 @@ public class InvoiceController {
     public ResponseEntity<List<Invoice>> getInvoicesByCustomer(@PathVariable UUID customerId) {
         List<Invoice> invoices = invoiceService.getInvoicesByCustomer(customerId);
         return ResponseEntity.ok(invoices);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<InvoiceStats> getInvoiceStats() {
+        InvoiceStats stats = invoiceService.getInvoiceStats();
+        return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/{id}/finalize")
