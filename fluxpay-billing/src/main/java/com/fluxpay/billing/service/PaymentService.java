@@ -79,23 +79,10 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PageResponse<Payment> getPayments(int page, int size, com.fluxpay.billing.dto.PaymentFilterDto filters) {
-        PaymentStatus status = filters.getStatus();
-        PaymentMethod paymentMethod = filters.getPaymentMethod();
-        UUID invoiceId = filters.getInvoiceId();
-        UUID customerId = filters.getCustomerId();
-        LocalDate dateFrom = filters.getDateFrom();
-        LocalDate dateTo = filters.getDateTo();
-        Long amountMin = filters.getAmountMin();
-        Long amountMax = filters.getAmountMax();
         UUID tenantId = TenantContext.getCurrentTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 100));
         
-        Instant dateFromInstant = dateFrom != null ? dateFrom.atStartOfDay().toInstant(ZoneOffset.UTC) : null;
-        Instant dateToInstant = dateTo != null ? dateTo.atTime(23, 59, 59).toInstant(ZoneOffset.UTC) : null;
-        
-        Page<Payment> paymentPage = paymentRepository.findPaymentsWithFilters(
-                tenantId, status, paymentMethod, invoiceId, customerId,
-                dateFromInstant, dateToInstant, amountMin, amountMax, pageable);
+        Page<Payment> paymentPage = paymentRepository.findPaymentsWithFilters(tenantId, filters, pageable);
         
         return new PageResponse<>(
                 paymentPage.getContent(),

@@ -120,7 +120,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             deviceInfo = deviceFingerprintService.extractDeviceInfo(request);
             ipAddress = deviceFingerprintService.getClientIpAddress(request);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Device info extraction is optional, continue with null values
         }
         
         return SessionData.builder()
@@ -155,7 +156,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (sessionId != null) {
                 session = sessionService.getSession(tenantId, userId, sessionId);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Session retrieval failed, will create new session
         }
         
         if (session == null) {
@@ -185,7 +187,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 sessionSecurityService.recordSuspiciousActivity(session, "Device fingerprint mismatch");
             }
             sessionService.updateLastAccess(session);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Session update failed, continue without update
         }
     }
 

@@ -1,5 +1,6 @@
 package com.fluxpay.billing.repository;
 
+import com.fluxpay.billing.dto.PaymentFilterDto;
 import com.fluxpay.billing.entity.Payment;
 import com.fluxpay.common.enums.PaymentMethod;
 import com.fluxpay.common.enums.PaymentStatus;
@@ -123,13 +124,18 @@ class PaymentRepositoryIT {
     @Test
     void findPaymentsWithFilters_ShouldFilterByAllCriteria() {
         Pageable pageable = PageRequest.of(0, 10);
-        Instant dateFrom = Instant.now().minusSeconds(3600);
-        Instant dateTo = Instant.now();
+        PaymentFilterDto filters = PaymentFilterDto.builder()
+                .status(PaymentStatus.COMPLETED)
+                .paymentMethod(PaymentMethod.CREDIT_CARD)
+                .invoiceId(invoiceId2)
+                .customerId(customerId2)
+                .dateFrom(java.time.LocalDate.now().minusDays(1))
+                .dateTo(java.time.LocalDate.now())
+                .amountMin(10000L)
+                .amountMax(20000L)
+                .build();
 
-        Page<Payment> result = paymentRepository.findPaymentsWithFilters(
-                tenantId1, PaymentStatus.COMPLETED, PaymentMethod.CREDIT_CARD,
-                invoiceId2, customerId2, dateFrom, dateTo, 10000L, 20000L, pageable
-        );
+        Page<Payment> result = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0)).isEqualTo(payment3);
@@ -138,10 +144,9 @@ class PaymentRepositoryIT {
     @Test
     void findPaymentsWithFilters_WithPagination_ShouldReturnPage() {
         Pageable pageable = PageRequest.of(0, 1);
+        PaymentFilterDto filters = PaymentFilterDto.builder().build();
 
-        Page<Payment> result = paymentRepository.findPaymentsWithFilters(
-                tenantId1, null, null, null, null, null, null, null, null, pageable
-        );
+        Page<Payment> result = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(3);
@@ -151,10 +156,9 @@ class PaymentRepositoryIT {
     @Test
     void findPaymentsWithFilters_WithNullFilters_ShouldReturnAll() {
         Pageable pageable = PageRequest.of(0, 10);
+        PaymentFilterDto filters = PaymentFilterDto.builder().build();
 
-        Page<Payment> result = paymentRepository.findPaymentsWithFilters(
-                tenantId1, null, null, null, null, null, null, null, null, pageable
-        );
+        Page<Payment> result = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
 
         assertThat(result.getContent()).hasSize(3);
         assertThat(result.getContent()).allMatch(p -> p.getTenantId().equals(tenantId1));
@@ -163,10 +167,12 @@ class PaymentRepositoryIT {
     @Test
     void findPaymentsWithFilters_WithAmountRange_ShouldFilterByAmount() {
         Pageable pageable = PageRequest.of(0, 10);
+        PaymentFilterDto filters = PaymentFilterDto.builder()
+                .amountMin(12000L)
+                .amountMax(18000L)
+                .build();
 
-        Page<Payment> result = paymentRepository.findPaymentsWithFilters(
-                tenantId1, null, null, null, null, null, null, 12000L, 18000L, pageable
-        );
+        Page<Payment> result = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getAmount()).isEqualTo(15000L);
@@ -251,14 +257,10 @@ class PaymentRepositoryIT {
     @Test
     void findPaymentsWithFilters_ShouldRespectTenantIsolation() {
         Pageable pageable = PageRequest.of(0, 10);
+        PaymentFilterDto filters = PaymentFilterDto.builder().build();
 
-        Page<Payment> tenant1Payments = paymentRepository.findPaymentsWithFilters(
-                tenantId1, null, null, null, null, null, null, null, null, pageable
-        );
-
-        Page<Payment> tenant2Payments = paymentRepository.findPaymentsWithFilters(
-                tenantId2, null, null, null, null, null, null, null, null, pageable
-        );
+        Page<Payment> tenant1Payments = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
+        Page<Payment> tenant2Payments = paymentRepository.findPaymentsWithFilters(tenantId2, filters, pageable);
 
         assertThat(tenant1Payments.getContent()).hasSize(3);
         assertThat(tenant2Payments.getContent()).hasSize(1);
@@ -272,9 +274,8 @@ class PaymentRepositoryIT {
         paymentRepository.save(payment1);
 
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Payment> result = paymentRepository.findPaymentsWithFilters(
-                tenantId1, null, null, null, null, null, null, null, null, pageable
-        );
+        PaymentFilterDto filters = PaymentFilterDto.builder().build();
+        Page<Payment> result = paymentRepository.findPaymentsWithFilters(tenantId1, filters, pageable);
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent()).noneMatch(p -> p.getId().equals(payment1.getId()));

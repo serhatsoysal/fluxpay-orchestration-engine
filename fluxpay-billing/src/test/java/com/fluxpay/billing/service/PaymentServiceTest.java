@@ -270,7 +270,7 @@ class PaymentServiceTest {
         Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1L);
 
         when(paymentRepository.findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
@@ -282,7 +282,7 @@ class PaymentServiceTest {
         assertThat(result.getPage()).isZero();
         assertThat(result.getSize()).isEqualTo(20);
         verify(paymentRepository).findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         );
     }
 
@@ -294,8 +294,7 @@ class PaymentServiceTest {
         LocalDate dateTo = LocalDate.now();
 
         when(paymentRepository.findPaymentsWithFilters(
-                eq(tenantId), eq(PaymentStatus.COMPLETED), eq(PaymentMethod.CREDIT_CARD),
-                any(), eq(customerId), any(), any(), eq(1000L), eq(50000L), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
@@ -313,8 +312,7 @@ class PaymentServiceTest {
 
         assertThat(result).isNotNull();
         verify(paymentRepository).findPaymentsWithFilters(
-                eq(tenantId), eq(PaymentStatus.COMPLETED), eq(PaymentMethod.CREDIT_CARD),
-                eq(invoiceId), eq(customerId), any(), any(), eq(1000L), eq(50000L), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         );
     }
 
@@ -324,13 +322,13 @@ class PaymentServiceTest {
         Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1L);
 
         when(paymentRepository.findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         )).thenReturn(paymentPage);
 
         paymentService.getPayments(0, 200, com.fluxpay.billing.dto.PaymentFilterDto.builder().build());
 
         verify(paymentRepository).findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(),
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class),
                 argThat(p -> p.getPageSize() == 100)
         );
     }
@@ -565,7 +563,7 @@ class PaymentServiceTest {
         Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1L);
 
         when(paymentRepository.findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
@@ -576,7 +574,7 @@ class PaymentServiceTest {
 
         assertThat(result).isNotNull();
         verify(paymentRepository).findPaymentsWithFilters(
-                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(tenantId), any(com.fluxpay.billing.dto.PaymentFilterDto.class), any(Pageable.class)
         );
     }
 

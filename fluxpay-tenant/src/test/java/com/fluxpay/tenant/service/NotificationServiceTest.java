@@ -81,14 +81,14 @@ class NotificationServiceTest {
                 1L
         );
 
-        when(notificationRepository.findByTenantIdAndUserId(eq(tenantId), eq(userId), eq(pageable)))
+        when(notificationRepository.findByTenantIdAndUserId(tenantId, userId, pageable))
                 .thenReturn(notificationPage);
 
         PageResponse<Notification> result = notificationService.getNotifications(userId, 0, 20);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getPage()).isZero();
         assertThat(result.getSize()).isEqualTo(20);
         assertThat(result.getTotalElements()).isEqualTo(1L);
         assertThat(result.getTotalPages()).isEqualTo(1);
@@ -100,14 +100,14 @@ class NotificationServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         Page<Notification> emptyPage = new PageImpl<>(List.of(), pageable, 0L);
 
-        when(notificationRepository.findByTenantIdAndUserId(eq(tenantId), eq(userId), eq(pageable)))
+        when(notificationRepository.findByTenantIdAndUserId(tenantId, userId, pageable))
                 .thenReturn(emptyPage);
 
         PageResponse<Notification> result = notificationService.getNotifications(userId, 0, 20);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isEqualTo(0L);
+        assertThat(result.getTotalElements()).isZero();
     }
 
     @Test

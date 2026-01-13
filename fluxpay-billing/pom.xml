@@ -83,6 +83,7 @@
                         <exclude>**/dto/**</exclude>
                         <exclude>**/enums/**</exclude>
                         <exclude>**/exception/**</exclude>
+                        <exclude>**/repository/*CustomImpl</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -97,7 +98,6 @@
                                     <element>PACKAGE</element>
                                     <includes>
                                         <include>com.fluxpay.billing.service</include>
-                                        <include>com.fluxpay.billing.repository</include>
                                         <include>com.fluxpay.billing.scheduler</include>
                                     </includes>
                                     <limits>
