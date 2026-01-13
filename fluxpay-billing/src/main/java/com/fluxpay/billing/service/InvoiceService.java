@@ -94,7 +94,7 @@ public class InvoiceService {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
             if (taxCalculation != null) {
                 Object taxAmountObj = taxCalculation.get("taxAmount");
-                Long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
+                long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
                                 taxAmountObj instanceof Number ? ((Number) taxAmountObj).longValue() : 0L;
                 invoice.setTax(taxAmount);
                 invoice.setTaxDetails(taxCalculation);

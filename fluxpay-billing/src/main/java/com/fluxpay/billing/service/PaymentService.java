@@ -129,7 +129,7 @@ public class PaymentService {
             throw new ValidationException("Payment cannot be refunded. Current status: " + payment.getStatus());
         }
         
-        Long currentRefundedAmount = payment.getRefundedAmount() != null ? payment.getRefundedAmount() : 0L;
+        long currentRefundedAmount = payment.getRefundedAmount() != null ? payment.getRefundedAmount() : 0L;
         Long paymentAmount = payment.getAmount();
         if (paymentAmount == null) {
             throw new ValidationException("Payment amount cannot be null");
@@ -151,9 +151,9 @@ public class PaymentService {
         
         Refund savedRefund = refundRepository.save(refund);
         
-        Long newRefundedAmount = currentRefundedAmount + amount;
+        long newRefundedAmount = currentRefundedAmount + amount;
         payment.setRefundedAmount(newRefundedAmount);
-        if (newRefundedAmount.equals(paymentAmount)) {
+        if (newRefundedAmount == paymentAmount) {
             payment.setStatus(PaymentStatus.REFUNDED);
         } else {
             payment.setStatus(PaymentStatus.PARTIALLY_REFUNDED);
