@@ -84,9 +84,10 @@ class SubscriptionRepositoryIT {
     void findByTenantIdAndCustomerId_ShouldReturnOnlyTenantSubscriptions() {
         List<Subscription> subscriptions = subscriptionRepository.findByTenantIdAndCustomerId(tenantId1, customerId1);
 
-        assertThat(subscriptions).hasSize(2);
-        assertThat(subscriptions).allMatch(s -> s.getTenantId().equals(tenantId1));
-        assertThat(subscriptions).allMatch(s -> s.getCustomerId().equals(customerId1));
+        assertThat(subscriptions)
+                .hasSize(2)
+                .allMatch(s -> s.getTenantId().equals(tenantId1))
+                .allMatch(s -> s.getCustomerId().equals(customerId1));
     }
 
     @Test
@@ -109,8 +110,7 @@ class SubscriptionRepositoryIT {
                 List.of(SubscriptionStatus.ACTIVE), Instant.now()
         );
 
-        assertThat(expired)
-                .hasSize(2);
+        assertThat(expired).hasSize(2);
         assertThat(expired).allMatch(s -> s.getCurrentPeriodEnd().isBefore(Instant.now()));
     }
 

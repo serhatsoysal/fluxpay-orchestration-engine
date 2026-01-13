@@ -1,5 +1,6 @@
 package com.fluxpay.billing.service;
 
+import com.fluxpay.billing.dto.PaymentQueryParams;
 import com.fluxpay.billing.entity.Payment;
 import com.fluxpay.billing.entity.Refund;
 import com.fluxpay.billing.repository.PaymentRepository;
@@ -74,6 +75,28 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<Payment> getPayments(PaymentQueryParams params) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Pageable pageable = PageRequest.of(params.getPage(), Math.min(params.getSize(), 100));
+        
+        Instant dateFromInstant = params.getDateFrom() != null ? params.getDateFrom().atStartOfDay().toInstant(ZoneOffset.UTC) : null;
+        Instant dateToInstant = params.getDateTo() != null ? params.getDateTo().atTime(23, 59, 59).toInstant(ZoneOffset.UTC) : null;
+        
+        Page<Payment> paymentPage = paymentRepository.findPaymentsWithFilters(
+                tenantId, params.getStatus(), params.getPaymentMethod(), params.getInvoiceId(), params.getCustomerId(),
+                dateFromInstant, dateToInstant, params.getAmountMin(), params.getAmountMax(), pageable);
+        
+        return new PageResponse<>(
+                paymentPage.getContent(),
+                paymentPage.getNumber(),
+                paymentPage.getSize(),
+                paymentPage.getTotalElements(),
+                paymentPage.getTotalPages(),
+                paymentPage.isLast()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<Payment> getPayments(
             int page, int size,
             PaymentStatus status,
@@ -84,24 +107,8 @@ public class PaymentService {
             LocalDate dateTo,
             Long amountMin,
             Long amountMax) {
-        UUID tenantId = TenantContext.getCurrentTenantId();
-        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
-        
-        Instant dateFromInstant = dateFrom != null ? dateFrom.atStartOfDay().toInstant(ZoneOffset.UTC) : null;
-        Instant dateToInstant = dateTo != null ? dateTo.atTime(23, 59, 59).toInstant(ZoneOffset.UTC) : null;
-        
-        Page<Payment> paymentPage = paymentRepository.findPaymentsWithFilters(
-                tenantId, status, paymentMethod, invoiceId, customerId,
-                dateFromInstant, dateToInstant, amountMin, amountMax, pageable);
-        
-        return new PageResponse<>(
-                paymentPage.getContent(),
-                paymentPage.getNumber(),
-                paymentPage.getSize(),
-                paymentPage.getTotalElements(),
-                paymentPage.getTotalPages(),
-                paymentPage.isLast()
-        );
+        PaymentQueryParams params = new PaymentQueryParams(page, size, status, paymentMethod, invoiceId, customerId, dateFrom, dateTo, amountMin, amountMax);
+        return getPayments(params);
     }
 
     @Transactional(readOnly = true)

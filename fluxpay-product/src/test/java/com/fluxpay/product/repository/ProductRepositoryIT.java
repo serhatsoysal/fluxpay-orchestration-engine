@@ -136,8 +136,9 @@ class ProductRepositoryIT {
 
         List<Product> products = productRepository.findByTenantId(tenantId1);
 
-        assertThat(products).hasSize(2);
-        assertThat(products).noneMatch(p -> p.getId().equals(product1.getId()));
+        assertThat(products)
+                .hasSize(2)
+                .noneMatch(p -> p.getId().equals(product1.getId()));
     }
 
     @Test
