@@ -156,7 +156,7 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public List<InvoiceItem> getInvoiceItems(UUID invoiceId) {
-        Invoice invoice = getInvoiceById(invoiceId);
+        getInvoiceById(invoiceId);
         return invoiceItemRepository.findByInvoiceId(invoiceId);
     }
 
