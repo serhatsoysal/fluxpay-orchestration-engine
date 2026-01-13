@@ -102,7 +102,10 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public List<Payment> getPaymentsByInvoice(UUID invoiceId) {
-        return paymentRepository.findByInvoiceId(invoiceId);
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return paymentRepository.findByInvoiceId(invoiceId).stream()
+                .filter(p -> p.getTenantId() != null && p.getTenantId().equals(tenantId))
+                .toList();
     }
 
     public Refund createRefund(UUID paymentId, Long amount, String reason, java.util.Map<String, Object> metadata) {

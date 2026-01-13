@@ -97,8 +97,9 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Invoice getInvoiceById(UUID id) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
         return invoiceRepository.findById(id)
-                .filter(i -> i.getDeletedAt() == null)
+                .filter(i -> i.getDeletedAt() == null && i.getTenantId() != null && i.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
     }
 
@@ -110,7 +111,10 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public List<Invoice> getInvoicesBySubscription(UUID subscriptionId) {
-        return invoiceRepository.findBySubscriptionId(subscriptionId);
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return invoiceRepository.findBySubscriptionId(subscriptionId).stream()
+                .filter(i -> i.getTenantId() != null && i.getTenantId().equals(tenantId))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +135,7 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public List<InvoiceItem> getInvoiceItems(UUID invoiceId) {
+        Invoice invoice = getInvoiceById(invoiceId);
         return invoiceItemRepository.findByInvoiceId(invoiceId);
     }
 
