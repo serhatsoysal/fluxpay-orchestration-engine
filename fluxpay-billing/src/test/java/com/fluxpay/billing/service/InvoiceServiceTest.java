@@ -777,7 +777,7 @@ class InvoiceServiceTest {
     void createInvoice_WhenItemsIsNull_ShouldThrowException() {
         Invoice invoice = new Invoice();
         invoice.setCustomerId(customerId);
-        invoice.setAmount(10000L);
+        invoice.setSubtotal(10000L);
         
         assertThatThrownBy(() -> invoiceService.createInvoice(invoice, null))
                 .isInstanceOf(ValidationException.class)
@@ -788,7 +788,7 @@ class InvoiceServiceTest {
     void createInvoice_WhenItemsIsEmpty_ShouldThrowException() {
         Invoice invoice = new Invoice();
         invoice.setCustomerId(customerId);
-        invoice.setAmount(10000L);
+        invoice.setSubtotal(10000L);
         
         assertThatThrownBy(() -> invoiceService.createInvoice(invoice, List.of()))
                 .isInstanceOf(ValidationException.class)
@@ -809,7 +809,7 @@ class InvoiceServiceTest {
     void createInvoiceWithTax_WhenItemsIsNull_ShouldThrowException() {
         Invoice invoice = new Invoice();
         invoice.setCustomerId(customerId);
-        invoice.setAmount(10000L);
+        invoice.setSubtotal(10000L);
         
         assertThatThrownBy(() -> invoiceService.createInvoiceWithTax(invoice, null, "US"))
                 .isInstanceOf(ValidationException.class)
@@ -818,6 +818,7 @@ class InvoiceServiceTest {
 
     @Test
     void finalizeInvoice_WhenNotDraft_ShouldThrowException() {
+        UUID invoiceId = UUID.randomUUID();
         Invoice invoice = new Invoice();
         invoice.setId(invoiceId);
         invoice.setTenantId(tenantId);
@@ -833,6 +834,7 @@ class InvoiceServiceTest {
 
     @Test
     void voidInvoice_WhenPaid_ShouldThrowException() {
+        UUID invoiceId = UUID.randomUUID();
         Invoice invoice = new Invoice();
         invoice.setId(invoiceId);
         invoice.setTenantId(tenantId);
@@ -848,6 +850,7 @@ class InvoiceServiceTest {
 
     @Test
     void markInvoiceAsPaid_WhenTotalIsNull_ShouldSetZero() {
+        UUID invoiceId = UUID.randomUUID();
         Invoice invoice = new Invoice();
         invoice.setId(invoiceId);
         invoice.setTenantId(tenantId);
