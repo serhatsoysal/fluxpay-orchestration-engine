@@ -86,7 +86,7 @@ public class WebhookController {
     public ResponseEntity<Void> deleteWebhook(@PathVariable UUID id) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         return webhookEndpointRepository.findById(id)
-                .filter(w -> w.getTenantId().equals(tenantId))
+                .filter(w -> w.getTenantId() != null && w.getTenantId().equals(tenantId))
                 .map(webhook -> {
                     webhook.setActive(false);
                     webhookEndpointRepository.save(webhook);
