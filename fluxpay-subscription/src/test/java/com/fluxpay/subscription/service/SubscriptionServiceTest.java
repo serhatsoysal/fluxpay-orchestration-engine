@@ -140,14 +140,14 @@ class SubscriptionServiceTest {
                 1L
         );
 
-        when(subscriptionRepository.findByTenantIdAndStatus(eq(tenantId), eq(null), eq(pageable)))
+        when(subscriptionRepository.findByTenantIdAndStatus(tenantId, null, pageable))
                 .thenReturn(subscriptionPage);
 
         PageResponse<Subscription> result = subscriptionService.getSubscriptions(0, 20, null);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getPage()).isZero();
         assertThat(result.getSize()).isEqualTo(20);
         assertThat(result.getTotalElements()).isEqualTo(1L);
         assertThat(result.getTotalPages()).isEqualTo(1);
@@ -162,7 +162,7 @@ class SubscriptionServiceTest {
                 1L
         );
 
-        when(subscriptionRepository.findByTenantIdAndStatus(eq(tenantId), eq(SubscriptionStatus.ACTIVE), eq(pageable)))
+        when(subscriptionRepository.findByTenantIdAndStatus(tenantId, SubscriptionStatus.ACTIVE, pageable))
                 .thenReturn(subscriptionPage);
 
         PageResponse<Subscription> result = subscriptionService.getSubscriptions(0, 20, SubscriptionStatus.ACTIVE);
@@ -179,8 +179,7 @@ class SubscriptionServiceTest {
 
         List<Subscription> result = subscriptionService.getSubscriptionsByCustomer(customerId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
         assertThat(result.get(0).getCustomerId()).isEqualTo(customerId);
     }
 
@@ -192,8 +191,7 @@ class SubscriptionServiceTest {
 
         List<SubscriptionItem> result = subscriptionService.getSubscriptionItems(subscriptionId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(item.getId());
     }
 
@@ -204,8 +202,7 @@ class SubscriptionServiceTest {
 
         List<SubscriptionItem> result = subscriptionService.getSubscriptionItems(subscriptionId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEmpty();
+        assertThat(result).isNotNull().isEmpty();
     }
 
     @Test

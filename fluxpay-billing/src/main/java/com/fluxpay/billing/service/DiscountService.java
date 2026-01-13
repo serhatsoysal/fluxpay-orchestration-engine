@@ -5,6 +5,8 @@ import com.fluxpay.billing.entity.Discount;
 import com.fluxpay.billing.repository.CouponRepository;
 import com.fluxpay.billing.repository.DiscountRepository;
 import com.fluxpay.common.enums.DiscountType;
+import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.common.exception.ValidationException;
 import com.fluxpay.security.context.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +30,10 @@ public class DiscountService {
     public Long calculateDiscount(Long amount, String couponCode) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         Coupon coupon = couponRepository.findByTenantIdAndCode(tenantId, couponCode)
-                .orElseThrow(() -> new RuntimeException("Coupon not found: " + couponCode));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", couponCode));
 
         if (!coupon.isValid()) {
-            throw new RuntimeException("Coupon is not valid");
+            throw new ValidationException("Coupon is not valid");
         }
 
         if (coupon.getDiscountType() == DiscountType.FIXED_AMOUNT) {
@@ -51,7 +53,7 @@ public class DiscountService {
 
         UUID tenantId = TenantContext.getCurrentTenantId();
         Coupon coupon = couponRepository.findByTenantIdAndCode(tenantId, couponCode)
-                .orElseThrow(() -> new RuntimeException("Coupon not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon", couponCode));
 
         coupon.setTimesRedeemed(coupon.getTimesRedeemed() + 1);
         couponRepository.save(coupon);

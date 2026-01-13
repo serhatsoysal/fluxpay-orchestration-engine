@@ -54,7 +54,8 @@ class WebhookServiceTest {
         
         when(webhookEndpointRepository.findByTenantIdAndActiveTrue(any())).thenReturn(Collections.emptyList());
 
-        webhookService.sendWebhook(tenantId, WebhookEventType.SUBSCRIPTION_CREATED, new HashMap<>());
+        assertThatCode(() -> webhookService.sendWebhook(tenantId, WebhookEventType.SUBSCRIPTION_CREATED, new HashMap<>()))
+                .doesNotThrowAnyException();
     }
 
     @Test

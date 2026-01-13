@@ -36,14 +36,14 @@ public class EmailService {
             
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send email", e);
+            throw new com.fluxpay.common.exception.ValidationException("Failed to send email: " + e.getMessage(), e);
         }
     }
 
     public void sendTemplatedEmail(String to, String templateName, Map<String, String> variables) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         EmailTemplate template = templateRepository.findByTenantIdAndName(tenantId, templateName)
-                .orElseThrow(() -> new RuntimeException("Template not found: " + templateName));
+                .orElseThrow(() -> new com.fluxpay.common.exception.ResourceNotFoundException("EmailTemplate", templateName));
 
         String subject = replacePlaceholders(template.getSubject(), variables);
         String htmlBody = replacePlaceholders(template.getHtmlBody(), variables);

@@ -94,14 +94,11 @@ public class InvoiceService {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
             if (taxCalculation != null && taxCalculation.containsKey("taxAmount")) {
                 Object taxAmountObj = taxCalculation.get("taxAmount");
-                long taxAmount;
-                if (taxAmountObj instanceof Long longValue) {
-                    taxAmount = longValue;
-                } else if (taxAmountObj instanceof Number number) {
-                    taxAmount = number.longValue();
-                } else {
-                    taxAmount = 0L;
-                }
+                long taxAmount = switch (taxAmountObj) {
+                    case Long longValue -> longValue;
+                    case Number number -> number.longValue();
+                    default -> 0L;
+                };
                 invoice.setTax(taxAmount);
                 invoice.setTaxDetails(taxCalculation);
                 Long subtotal = invoice.getSubtotal();
@@ -124,10 +121,7 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Invoice getInvoiceById(UUID id) {
-        UUID tenantId = TenantContext.getCurrentTenantId();
-        return invoiceRepository.findById(id)
-                .filter(i -> i.getDeletedAt() == null && i.getTenantId() != null && i.getTenantId().equals(tenantId))
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
+        return findInvoiceById(id);
     }
 
     @Transactional(readOnly = true)
@@ -162,25 +156,26 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public List<InvoiceItem> getInvoiceItems(UUID invoiceId) {
-        getInvoiceById(invoiceId);
+        validateInvoiceExists(invoiceId);
         return invoiceItemRepository.findByInvoiceId(invoiceId);
     }
 
+    private void validateInvoiceExists(UUID invoiceId) {
+        findInvoiceById(invoiceId);
+    }
+
     public Invoice finalizeInvoice(UUID id) {
-        Invoice invoice = getInvoiceById(id);
-        if (invoice.getStatus() == InvoiceStatus.DRAFT) {
+        Invoice invoice = findInvoiceById(id);
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new ValidationException("Only DRAFT invoices can be finalized");
+        }
         invoice.setStatus(InvoiceStatus.OPEN);
         return invoiceRepository.save(invoice);
-        }
-        throw new ValidationException("Only DRAFT invoices can be finalized");
     }
 
     public Invoice markInvoiceAsPaid(UUID id) {
-        Invoice invoice = getInvoiceById(id);
-        Long total = invoice.getTotal();
-        if (total == null) {
-            total = 0L;
-        }
+        Invoice invoice = findInvoiceById(id);
+        Long total = invoice.getTotal() != null ? invoice.getTotal() : 0L;
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaidAt(Instant.now());
         invoice.setAmountPaid(total);
@@ -189,12 +184,19 @@ public class InvoiceService {
     }
 
     public Invoice voidInvoice(UUID id) {
-        Invoice invoice = getInvoiceById(id);
+        Invoice invoice = findInvoiceById(id);
         if (invoice.getStatus() == InvoiceStatus.PAID) {
             throw new ValidationException("Paid invoices cannot be voided");
         }
         invoice.setStatus(InvoiceStatus.VOID);
         return invoiceRepository.save(invoice);
+    }
+
+    private Invoice findInvoiceById(UUID id) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return invoiceRepository.findById(id)
+                .filter(i -> i.getDeletedAt() == null && i.getTenantId() != null && i.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice", id));
     }
 
     private String generateInvoiceNumber() {

@@ -4,9 +4,6 @@ import com.fluxpay.security.session.model.SessionData;
 import com.fluxpay.security.session.util.SessionTestDataFactory;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SessionServiceIntegrationTest {

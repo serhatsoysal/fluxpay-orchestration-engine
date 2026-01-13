@@ -60,10 +60,10 @@ class UsageServiceTest {
 
     @Test
     void recordUsage_ShouldSaveUsageRecord() {
-        UsageRecord record = new UsageRecord();
-        record.setSubscriptionId(UUID.randomUUID());
-        record.setMeterName("api_calls");
-        record.setQuantity(BigDecimal.TEN);
+        UsageRecord usageRecord = new UsageRecord();
+        usageRecord.setSubscriptionId(UUID.randomUUID());
+        usageRecord.setMeterName("api_calls");
+        usageRecord.setQuantity(BigDecimal.TEN);
 
         when(usageRecordRepository.save(any())).thenAnswer(i -> {
             UsageRecord saved = i.getArgument(0);
@@ -71,17 +71,17 @@ class UsageServiceTest {
             return saved;
         });
 
-        UsageRecord result = usageService.recordUsage(record);
+        UsageRecord result = usageService.recordUsage(usageRecord);
         assertThat(result.getId()).isNotNull();
     }
 
     @Test
     void aggregateUsage_LastType_ShouldReturnLastRecord() {
-        UsageRecord record = new UsageRecord();
-        record.setQuantity(BigDecimal.valueOf(75));
+        UsageRecord usageRecord = new UsageRecord();
+        usageRecord.setQuantity(BigDecimal.valueOf(75));
 
         when(usageRecordRepository.findBySubscriptionItemIdAndTimestampBetweenOrderByTimestampDesc(any(), any(), any()))
-                .thenReturn(List.of(record));
+                .thenReturn(List.of(usageRecord));
 
         BigDecimal result = usageService.aggregateUsage(
                 UUID.randomUUID(),
@@ -159,13 +159,13 @@ class UsageServiceTest {
 
     @Test
     void aggregateUsage_LastType_WithMultipleRecords_ShouldReturnFirst() {
-        UsageRecord record1 = new UsageRecord();
-        record1.setQuantity(BigDecimal.valueOf(100));
-        UsageRecord record2 = new UsageRecord();
-        record2.setQuantity(BigDecimal.valueOf(50));
+        UsageRecord usageRecord1 = new UsageRecord();
+        usageRecord1.setQuantity(BigDecimal.valueOf(100));
+        UsageRecord usageRecord2 = new UsageRecord();
+        usageRecord2.setQuantity(BigDecimal.valueOf(50));
 
         when(usageRecordRepository.findBySubscriptionItemIdAndTimestampBetweenOrderByTimestampDesc(any(), any(), any()))
-                .thenReturn(List.of(record1, record2));
+                .thenReturn(List.of(usageRecord1, usageRecord2));
 
         BigDecimal result = usageService.aggregateUsage(
                 UUID.randomUUID(),

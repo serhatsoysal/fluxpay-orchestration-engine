@@ -32,6 +32,10 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public Customer getCustomerById(UUID id) {
+        return findCustomerById(id);
+    }
+
+    private Customer findCustomerById(UUID id) {
         return customerRepository.findById(id)
                 .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
@@ -46,7 +50,7 @@ public class CustomerService {
     }
 
     public Customer updateCustomer(UUID id, Customer updatedCustomer) {
-        Customer customer = getCustomerById(id);
+        Customer customer = findCustomerById(id);
         
         customer.setName(updatedCustomer.getName());
         customer.setEmail(updatedCustomer.getEmail());
@@ -59,7 +63,7 @@ public class CustomerService {
     }
 
     public void deleteCustomer(UUID id) {
-        Customer customer = getCustomerById(id);
+        Customer customer = findCustomerById(id);
         customer.softDelete();
         customerRepository.save(customer);
     }

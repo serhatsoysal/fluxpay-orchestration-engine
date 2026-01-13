@@ -94,9 +94,7 @@ public class SessionService {
         
         sessions.stream()
                 .filter(s -> excludeSessionId == null || !s.getSessionId().equals(excludeSessionId))
-                .forEach(s -> {
-                    invalidateSession(tenantId, userId, s.getSessionId());
-                });
+                .forEach(s -> invalidateSession(tenantId, userId, s.getSessionId()));
     }
 
     public SessionData refreshSession(String refreshToken, String deviceFingerprint) {

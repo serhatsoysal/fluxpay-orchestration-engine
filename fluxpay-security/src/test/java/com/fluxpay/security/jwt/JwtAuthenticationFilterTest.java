@@ -117,20 +117,14 @@ class JwtAuthenticationFilterTest {
         assertEquals(tenantId, capturedTenantId[0]);
     }
 
-    @Test
-    void testDoFilterInternalWithNoToken() throws ServletException, IOException {
-        when(request.getHeader("Authorization")).thenReturn(null);
-
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        verify(filterChain).doFilter(request, response);
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-    }
-
-    @Test
-    void testDoFilterInternalWithInvalidToken() throws ServletException, IOException {
-        when(request.getHeader("Authorization")).thenReturn("Bearer invalid.token");
-        when(jwtTokenProvider.validateToken("invalid.token")).thenReturn(false);
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"Bearer invalid.token"})
+    void testDoFilterInternal_WithNoTokenOrInvalidToken_ShouldNotAuthenticate(String authHeader) throws ServletException, IOException {
+        when(request.getHeader("Authorization")).thenReturn(authHeader);
+        if (authHeader != null) {
+            when(jwtTokenProvider.validateToken("invalid.token")).thenReturn(false);
+        }
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 

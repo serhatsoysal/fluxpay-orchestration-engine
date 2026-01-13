@@ -125,8 +125,7 @@ class ProductServiceTest {
 
         List<Product> result = productService.getActiveProducts();
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Test Product");
     }
 
@@ -136,8 +135,7 @@ class ProductServiceTest {
 
         List<Product> result = productService.getActiveProducts();
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEmpty();
+        assertThat(result).isNotNull().isEmpty();
     }
 
     @Test
@@ -147,8 +145,7 @@ class ProductServiceTest {
 
         List<Product> result = productService.getAllProducts();
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
     }
 
     @Test

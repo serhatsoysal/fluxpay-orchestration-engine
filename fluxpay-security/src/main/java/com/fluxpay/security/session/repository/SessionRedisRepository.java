@@ -1,6 +1,7 @@
 package com.fluxpay.security.session.repository;
 
 import com.fluxpay.security.session.model.SessionData;
+import java.util.Objects;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public class SessionRedisRepository {
         
         return sessionIds.stream()
                 .map(id -> findBySessionId(tenantId, userId, id.toString()))
-                .filter(session -> session != null)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

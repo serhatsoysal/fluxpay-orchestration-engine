@@ -59,7 +59,7 @@ public class Coupon extends BaseEntity {
     }
 
     public boolean isValid() {
-        if (!active) {
+        if (!Boolean.TRUE.equals(active)) {
             return false;
         }
 
@@ -71,11 +71,7 @@ public class Coupon extends BaseEntity {
             return false;
         }
 
-        if (maxRedemptions != null && timesRedeemed >= maxRedemptions) {
-            return false;
-        }
-
-        return true;
+        return maxRedemptions == null || timesRedeemed < maxRedemptions;
     }
 }
 

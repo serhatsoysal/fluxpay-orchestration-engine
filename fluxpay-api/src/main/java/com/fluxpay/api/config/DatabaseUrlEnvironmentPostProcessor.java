@@ -17,18 +17,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        String databaseUrl = getEnvironmentVariable(DATABASE_URL_PROPERTY);
-        if (databaseUrl == null) {
-            databaseUrl = getEnvironmentVariable(SPRING_DATASOURCE_URL_PROPERTY);
-        }
-        
-        if (databaseUrl == null) {
-            String dbHost = getEnvironmentVariable("DB_HOST");
-            if (dbHost != null && (dbHost.contains("://") || dbHost.contains("@"))) {
-                databaseUrl = dbHost;
-            }
-        }
-        
+        String databaseUrl = resolveDatabaseUrl();
         if (!StringUtils.hasText(databaseUrl)) {
             return;
         }
@@ -41,29 +30,52 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
         try {
             ParsedDatabaseUrl parsed = parseDatabaseUrl(urlToParse);
             if (parsed != null && parsed.isValid()) {
-                Map<String, Object> properties = new HashMap<>();
-                properties.put("spring.datasource.url", parsed.getJdbcUrl());
-                if (parsed.getUsername() != null) {
-                    properties.put("spring.datasource.username", parsed.getUsername());
-                }
-                if (parsed.getPassword() != null) {
-                    properties.put("spring.datasource.password", parsed.getPassword());
-                }
-                
-                MapPropertySource propertySource = new MapPropertySource("databaseUrlProcessor", properties);
-                MutablePropertySources propertySources = environment.getPropertySources();
-                
-                String applicationConfigSourceName = "applicationConfig: [classpath:/application.yml]";
-                if (propertySources.contains(applicationConfigSourceName)) {
-                    propertySources.addBefore(applicationConfigSourceName, propertySource);
-                } else if (propertySources.contains("systemProperties")) {
-                    propertySources.addBefore("systemProperties", propertySource);
-                } else {
-                    propertySources.addFirst(propertySource);
-                }
+                applyDatabaseProperties(environment, parsed);
             }
         } catch (Exception e) {
             throw new IllegalStateException("Failed to parse database URL: " + databaseUrl, e);
+        }
+    }
+
+    private String resolveDatabaseUrl() {
+        String databaseUrl = getEnvironmentVariable(DATABASE_URL_PROPERTY);
+        if (databaseUrl != null) {
+            return databaseUrl;
+        }
+        
+        databaseUrl = getEnvironmentVariable(SPRING_DATASOURCE_URL_PROPERTY);
+        if (databaseUrl != null) {
+            return databaseUrl;
+        }
+        
+        String dbHost = getEnvironmentVariable("DB_HOST");
+        if (dbHost != null && (dbHost.contains("://") || dbHost.contains("@"))) {
+            return dbHost;
+        }
+        
+        return null;
+    }
+
+    private void applyDatabaseProperties(ConfigurableEnvironment environment, ParsedDatabaseUrl parsed) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("spring.datasource.url", parsed.getJdbcUrl());
+        if (parsed.getUsername() != null) {
+            properties.put("spring.datasource.username", parsed.getUsername());
+        }
+        if (parsed.getPassword() != null) {
+            properties.put("spring.datasource.password", parsed.getPassword());
+        }
+        
+        MapPropertySource propertySource = new MapPropertySource("databaseUrlProcessor", properties);
+        MutablePropertySources propertySources = environment.getPropertySources();
+        
+        String applicationConfigSourceName = "applicationConfig: [classpath:/application.yml]";
+        if (propertySources.contains(applicationConfigSourceName)) {
+            propertySources.addBefore(applicationConfigSourceName, propertySource);
+        } else if (propertySources.contains("systemProperties")) {
+            propertySources.addBefore("systemProperties", propertySource);
+        } else {
+            propertySources.addFirst(propertySource);
         }
     }
     
@@ -80,14 +92,36 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             return null;
         }
         
-        url = url.trim();
-        
-        if (url.startsWith("postgresql://")) {
-            url = url.substring(13);
-        } else if (url.startsWith("postgres://")) {
-            url = url.substring(11);
+        String normalizedUrl = normalizeUrl(url.trim());
+        if (normalizedUrl == null) {
+            return null;
         }
         
+        Credentials credentials = extractCredentials(normalizedUrl);
+        if (credentials == null) {
+            return null;
+        }
+        
+        HostPortDatabase hostPortDb = extractHostPortDatabase(normalizedUrl);
+        if (hostPortDb == null) {
+            return null;
+        }
+        
+        return new ParsedDatabaseUrl(hostPortDb.host(), hostPortDb.port(), hostPortDb.database(), 
+                                    credentials.username(), credentials.password());
+    }
+
+    private String normalizeUrl(String url) {
+        if (url.startsWith("postgresql://")) {
+            return url.substring(13);
+        }
+        if (url.startsWith("postgres://")) {
+            return url.substring(11);
+        }
+        return url;
+    }
+
+    private Credentials extractCredentials(String url) {
         int atIndex = url.indexOf('@');
         if (atIndex <= 0) {
             return null;
@@ -98,6 +132,11 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
         String username = userParts.length > 0 && !userParts[0].isEmpty() ? userParts[0] : null;
         String password = userParts.length > 1 ? userParts[1] : null;
         
+        return new Credentials(username, password);
+    }
+
+    private HostPortDatabase extractHostPortDatabase(String url) {
+        int atIndex = url.indexOf('@');
         String hostDbPart = url.substring(atIndex + 1);
         int slashIndex = hostDbPart.indexOf('/');
         if (slashIndex <= 0) {
@@ -137,7 +176,13 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             return null;
         }
         
-        return new ParsedDatabaseUrl(host, port, database, username, password);
+        return new HostPortDatabase(host, port, database);
+    }
+
+    private record Credentials(String username, String password) {
+    }
+
+    private record HostPortDatabase(String host, int port, String database) {
     }
     
     private static class ParsedDatabaseUrl {

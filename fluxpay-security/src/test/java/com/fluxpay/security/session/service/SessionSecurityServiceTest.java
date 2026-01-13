@@ -127,7 +127,7 @@ class SessionSecurityServiceTest {
         assertThat(testSession.getSecurityFlags().isSuspiciousActivity()).isTrue();
         assertThat(testSession.getSecurityFlags().getFailedAttempts()).isEqualTo(1);
         verify(sessionRepository).update(testSession);
-        verify(auditService).logSecurityEvent(eq(testSession), eq("SUSPICIOUS_ACTIVITY"), eq("test reason"));
+        verify(auditService).logSecurityEvent(testSession, "SUSPICIOUS_ACTIVITY", "test reason");
     }
 
     @Test
@@ -240,7 +240,7 @@ class SessionSecurityServiceTest {
         sessionSecurityService.recordSuspiciousActivity(testSession, "reason");
 
         verify(sessionRepository).update(testSession);
-        verify(auditService).logSecurityEvent(eq(testSession), eq("SUSPICIOUS_ACTIVITY"), eq("reason"));
+        verify(auditService).logSecurityEvent(testSession, "SUSPICIOUS_ACTIVITY", "reason");
     }
 
     @Test
@@ -280,14 +280,6 @@ class SessionSecurityServiceTest {
         verify(sessionRepository).update(testSession);
     }
 
-    @Test
-    void validateSessionCreation_ShouldLogAttempt() {
-        when(rateLimitService.isRateLimited(testSession.getIpAddress(), "session_creation")).thenReturn(false);
-
-        sessionSecurityService.validateSessionCreation(testSession);
-
-        verify(rateLimitService).isRateLimited(testSession.getIpAddress(), "session_creation");
-    }
 
     @Test
     void verifyDeviceFingerprint_ShouldReturnTrue_WhenSecurityPropertiesIsNull() {

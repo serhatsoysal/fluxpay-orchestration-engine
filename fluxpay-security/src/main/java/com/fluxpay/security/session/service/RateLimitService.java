@@ -36,11 +36,7 @@ public class RateLimitService {
     }
 
     private long getRateLimitWindow(String operation) {
-        return switch (operation) {
-            case "session_creation" -> Duration.ofMinutes(1).getSeconds();
-            case "session_requests" -> Duration.ofMinutes(1).getSeconds();
-            default -> Duration.ofMinutes(1).getSeconds();
-        };
+        return Duration.ofMinutes(1).getSeconds();
     }
 }
 

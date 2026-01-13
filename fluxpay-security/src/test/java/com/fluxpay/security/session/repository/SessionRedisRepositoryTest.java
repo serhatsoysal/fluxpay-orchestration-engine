@@ -149,9 +149,9 @@ class SessionRedisRepositoryTest {
     @Test
     void findByRefreshToken_ShouldReturnSession() {
         String sessionKey = "session:tenant:user:" + testSession.getSessionId();
-        when(valueOperations.get(eq("refresh:" + testSession.getRefreshToken()))).thenReturn(testSession.getSessionId());
+        when(valueOperations.get("refresh:" + testSession.getRefreshToken())).thenReturn(testSession.getSessionId());
         when(redisTemplate.keys(anyString())).thenReturn(Set.of(sessionKey));
-        when(valueOperations.get(eq(sessionKey))).thenReturn(testSession);
+        when(valueOperations.get(sessionKey)).thenReturn(testSession);
 
         SessionData result = sessionRedisRepository.findByRefreshToken(testSession.getRefreshToken());
 
