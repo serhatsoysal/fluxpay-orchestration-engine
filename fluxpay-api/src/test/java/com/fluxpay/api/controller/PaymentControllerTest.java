@@ -248,7 +248,7 @@ class PaymentControllerTest {
     }
 
     @Test
-    void createRefund_WithoutAuthorizationHeader_ShouldReturnForbidden() {
+    void createRefund_WithoutAuthorizationHeader_ShouldReturnUnauthorized() {
         CreateRefundRequest request = new CreateRefundRequest();
         request.setAmount(5000L);
 
@@ -258,24 +258,24 @@ class PaymentControllerTest {
                 paymentId, request, httpRequest
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         verify(paymentService, never()).createRefund(any(), any(), any(), any());
     }
 
     @Test
-    void createRefund_WithInvalidToken_ShouldReturnForbidden() {
+    void createRefund_WithInvalidToken_ShouldReturnUnauthorized() {
         CreateRefundRequest request = new CreateRefundRequest();
         request.setAmount(5000L);
 
         when(httpRequest.getHeader("Authorization")).thenReturn("Invalid token");
-        when(jwtTokenProvider.getRole(null)).thenReturn("USER");
 
         ResponseEntity<RefundResponse> response = paymentController.createRefund(
                 paymentId, request, httpRequest
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         verify(paymentService, never()).createRefund(any(), any(), any(), any());
+        verify(jwtTokenProvider, never()).getRole(any());
     }
 
     @Test
