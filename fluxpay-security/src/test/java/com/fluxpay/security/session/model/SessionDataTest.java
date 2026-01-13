@@ -61,8 +61,7 @@ class SessionDataTest {
         SessionData session1 = SessionTestDataFactory.createSessionData();
         SessionData session2 = SessionTestDataFactory.createSessionData();
 
-        assertThat(session1).isNotEqualTo(session2);
-        assertThat(session1).isEqualTo(session1);
+        assertThat(session1).isNotEqualTo(session2).isEqualTo(session1);
     }
 
     @Test

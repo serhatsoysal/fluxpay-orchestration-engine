@@ -21,7 +21,7 @@ public class RateLimitService {
         long countValue = (count != null ? count : 0L);
         
         if (countValue == 1L) {
-            redisTemplate.expire(key, getRateLimitWindow(operation), TimeUnit.SECONDS);
+            redisTemplate.expire(key, getRateLimitWindow(), TimeUnit.SECONDS);
         }
         
         return countValue > getRateLimit(operation);
@@ -35,7 +35,7 @@ public class RateLimitService {
         };
     }
 
-    private long getRateLimitWindow(String operation) {
+    private long getRateLimitWindow() {
         return Duration.ofMinutes(1).getSeconds();
     }
 }

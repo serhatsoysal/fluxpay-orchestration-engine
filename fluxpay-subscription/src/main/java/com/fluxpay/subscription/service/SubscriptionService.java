@@ -104,7 +104,7 @@ public class SubscriptionService {
     }
 
     public Subscription pauseSubscription(UUID id) {
-        Subscription subscription = getSubscriptionById(id);
+        Subscription subscription = findSubscriptionById(id);
         subscription.setStatus(SubscriptionStatus.PAUSED);
         return subscriptionRepository.save(subscription);
     }
