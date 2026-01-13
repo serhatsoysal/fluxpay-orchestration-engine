@@ -215,7 +215,7 @@ class InvoiceServiceTest {
     void getInvoicesBySubscription_ShouldReturnInvoices() {
         invoice.setSubscriptionId(subscriptionId);
 
-        when(invoiceRepository.findBySubscriptionId(testSubscriptionId)).thenReturn(Arrays.asList(invoice));
+        when(invoiceRepository.findBySubscriptionId(subscriptionId)).thenReturn(Arrays.asList(invoice));
 
         List<Invoice> result = invoiceService.getInvoicesBySubscription(subscriptionId);
 
