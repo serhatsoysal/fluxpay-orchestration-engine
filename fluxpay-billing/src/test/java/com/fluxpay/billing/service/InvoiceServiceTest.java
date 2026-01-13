@@ -24,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -565,6 +566,201 @@ class InvoiceServiceTest {
         assertThat(result.getPeriod().getFrom()).isNotNull();
         assertThat(result.getPeriod().getTo()).isNotNull();
         verify(invoiceRepository).sumAmountDueByTenantId(tenantId);
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenDueDateEqualsInvoiceDate_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = invoiceDate;
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Due date must be after invoice date");
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenCustomerDeleted_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(Instant.now());
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenCustomerWrongTenant_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        UUID differentTenantId = UUID.randomUUID();
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(differentTenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenSubscriptionWrongTenant_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        UUID differentTenantId = UUID.randomUUID();
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        com.fluxpay.subscription.entity.Subscription subscription = new com.fluxpay.subscription.entity.Subscription();
+        subscription.setId(subscriptionId);
+        subscription.setTenantId(differentTenantId);
+        subscription.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(subscription));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, subscriptionId, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenSubscriptionDeleted_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        com.fluxpay.subscription.entity.Subscription subscription = new com.fluxpay.subscription.entity.Subscription();
+        subscription.setId(subscriptionId);
+        subscription.setTenantId(tenantId);
+        subscription.setDeletedAt(Instant.now());
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(subscription));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, subscriptionId, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenItemHasNullPriceId_ShouldNotValidatePrice() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        item.setPriceId(null);
+        
+        Invoice newInvoice = new Invoice();
+        newInvoice.setId(UUID.randomUUID());
+        newInvoice.setInvoiceNumber("INV-000001");
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(i -> {
+            Invoice inv = i.getArgument(0);
+            inv.setId(newInvoice.getId());
+            inv.setInvoiceNumber(newInvoice.getInvoiceNumber());
+            return inv;
+        });
+        when(invoiceItemRepository.save(any(InvoiceItem.class))).thenAnswer(i -> i.getArgument(0));
+        
+        Invoice result = invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        );
+        
+        assertThat(result).isNotNull();
+        verify(priceRepository, never()).findById(any());
+    }
+
+    @Test
+    void getInvoiceStatsWithPeriod_WithOnlyDateFrom_ShouldUseDefaultDateTo() {
+        LocalDate dateFrom = LocalDate.now().minusDays(30);
+        
+        when(invoiceRepository.sumAmountDueByTenantId(tenantId)).thenReturn(50000L);
+        when(invoiceRepository.sumOverdueAmountByTenantId(eq(tenantId), any())).thenReturn(10000L);
+        
+        InvoiceStatsResponse result = invoiceService.getInvoiceStatsWithPeriod(dateFrom, null);
+        
+        assertThat(result).isNotNull();
+        assertThat(result.getPeriod().getFrom()).isEqualTo(dateFrom);
+        assertThat(result.getPeriod().getTo()).isNotNull();
+    }
+
+    @Test
+    void getInvoiceStatsWithPeriod_WithOnlyDateTo_ShouldUseDefaultDateFrom() {
+        LocalDate dateTo = LocalDate.now();
+        
+        when(invoiceRepository.sumAmountDueByTenantId(tenantId)).thenReturn(50000L);
+        when(invoiceRepository.sumOverdueAmountByTenantId(eq(tenantId), any())).thenReturn(10000L);
+        
+        InvoiceStatsResponse result = invoiceService.getInvoiceStatsWithPeriod(null, dateTo);
+        
+        assertThat(result).isNotNull();
+        assertThat(result.getPeriod().getFrom()).isNotNull();
+        assertThat(result.getPeriod().getTo()).isEqualTo(dateTo);
     }
 }
 

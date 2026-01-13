@@ -127,6 +127,47 @@ class PaymentServiceTest {
     }
 
     @Test
+    void createPayment_ShouldSetPaidAtWhenCompleted() {
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment p = invocation.getArgument(0);
+            p.setId(paymentId);
+            return p;
+        });
+
+        Payment result = paymentService.createPayment(payment);
+
+        assertThat(result).isNotNull();
+        if (result.getStatus() == PaymentStatus.COMPLETED) {
+            assertThat(result.getPaidAt()).isNotNull();
+            assertThat(result.getPaymentIntentId()).startsWith("pi_");
+            assertThat(result.getTransactionId()).startsWith("txn_");
+        } else if (result.getStatus() == PaymentStatus.FAILED) {
+            assertThat(result.getFailureReason()).isEqualTo("Payment processor failed");
+        }
+        verify(paymentRepository, atLeast(2)).save(any(Payment.class));
+    }
+
+    @Test
+    void getPaymentStats_WithNullDates_ShouldUseDefaults() {
+        when(paymentRepository.sumRevenueByTenantId(eq(tenantId), any(), any())).thenReturn(0L);
+        when(paymentRepository.countByTenantId(eq(tenantId), any(), any())).thenReturn(0L);
+        when(paymentRepository.countByTenantIdAndStatus(eq(tenantId), eq(PaymentStatus.COMPLETED), any(), any()))
+                .thenReturn(0L);
+        when(paymentRepository.countByTenantIdAndStatus(eq(tenantId), eq(PaymentStatus.FAILED), any(), any()))
+                .thenReturn(0L);
+        when(paymentRepository.countByTenantIdAndStatus(eq(tenantId), eq(PaymentStatus.PENDING), any(), any()))
+                .thenReturn(0L);
+        when(paymentRepository.sumRefundedAmountByTenantId(eq(tenantId), any(), any())).thenReturn(0L);
+        when(paymentRepository.avgPaymentAmountByTenantId(eq(tenantId), any(), any())).thenReturn(0L);
+
+        PaymentStatsResponse result = paymentService.getPaymentStats(null, null);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getPeriod().getFrom()).isNotNull();
+        assertThat(result.getPeriod().getTo()).isNotNull();
+    }
+
+    @Test
     void getPaymentById_Success() {
         payment.setDeletedAt(null);
 
@@ -488,5 +529,48 @@ class PaymentServiceTest {
         assertThat(result.getMetadata()).isEqualTo(metadata);
         verify(refundRepository).save(argThat(r -> r.getMetadata().equals(metadata)));
     }
+
+    @Test
+    void createRefund_WhenAmountEqualsRefundable_ShouldSetToRefunded() {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setRefundedAmount(5000L);
+        payment.setAmount(10000L);
+
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+        when(refundRepository.save(any(Refund.class))).thenAnswer(invocation -> {
+            Refund r = invocation.getArgument(0);
+            r.setId(UUID.randomUUID());
+            return r;
+        });
+        when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
+
+        Refund result = paymentService.createRefund(paymentId, 5000L, "Full refund", null);
+
+        assertThat(result).isNotNull();
+        assertThat(payment.getRefundedAmount()).isEqualTo(10000L);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REFUNDED);
+        verify(paymentRepository).save(payment);
+    }
+
+    @Test
+    void getPayments_WithNullDateTo_ShouldSetToEndOfDay() {
+        LocalDate dateFrom = LocalDate.now().minusDays(7);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1L);
+
+        when(paymentRepository.findPaymentsWithFilters(
+                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+        )).thenReturn(paymentPage);
+
+        PageResponse<Payment> result = paymentService.getPayments(
+                0, 20, null, null, null, null, dateFrom, null, null, null
+        );
+
+        assertThat(result).isNotNull();
+        verify(paymentRepository).findPaymentsWithFilters(
+                eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
+        );
+    }
+
 }
 
