@@ -90,7 +90,7 @@ public class InvoiceService {
             invoice.setInvoiceNumber(generateInvoiceNumber());
         }
 
-        if (countryCode != null && invoice.getSubtotal() != null) {
+        if (countryCode != null && !countryCode.isEmpty() && invoice.getSubtotal() != null) {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
             if (taxCalculation != null) {
                 Object taxAmountObj = taxCalculation.get("taxAmount");

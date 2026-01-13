@@ -762,5 +762,106 @@ class InvoiceServiceTest {
         assertThat(result.getPeriod().getFrom()).isNotNull();
         assertThat(result.getPeriod().getTo()).isEqualTo(dateTo);
     }
+
+    @Test
+    void createInvoice_WhenInvoiceIsNull_ShouldThrowException() {
+        InvoiceItem item = new InvoiceItem();
+        item.setAmount(10000L);
+        
+        assertThatThrownBy(() -> invoiceService.createInvoice(null, List.of(item)))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("cannot be null");
+    }
+
+    @Test
+    void createInvoice_WhenItemsIsNull_ShouldThrowException() {
+        Invoice invoice = new Invoice();
+        invoice.setCustomerId(customerId);
+        invoice.setAmount(10000L);
+        
+        assertThatThrownBy(() -> invoiceService.createInvoice(invoice, null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("must have at least one item");
+    }
+
+    @Test
+    void createInvoice_WhenItemsIsEmpty_ShouldThrowException() {
+        Invoice invoice = new Invoice();
+        invoice.setCustomerId(customerId);
+        invoice.setAmount(10000L);
+        
+        assertThatThrownBy(() -> invoiceService.createInvoice(invoice, List.of()))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("must have at least one item");
+    }
+
+    @Test
+    void createInvoiceWithTax_WhenInvoiceIsNull_ShouldThrowException() {
+        InvoiceItem item = new InvoiceItem();
+        item.setAmount(10000L);
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithTax(null, List.of(item), "US"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("cannot be null");
+    }
+
+    @Test
+    void createInvoiceWithTax_WhenItemsIsNull_ShouldThrowException() {
+        Invoice invoice = new Invoice();
+        invoice.setCustomerId(customerId);
+        invoice.setAmount(10000L);
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithTax(invoice, null, "US"))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("must have at least one item");
+    }
+
+    @Test
+    void finalizeInvoice_WhenNotDraft_ShouldThrowException() {
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setTenantId(tenantId);
+        invoice.setStatus(InvoiceStatus.OPEN);
+        invoice.setDeletedAt(null);
+        
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        
+        assertThatThrownBy(() -> invoiceService.finalizeInvoice(invoiceId))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Only DRAFT invoices can be finalized");
+    }
+
+    @Test
+    void voidInvoice_WhenPaid_ShouldThrowException() {
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setTenantId(tenantId);
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setDeletedAt(null);
+        
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        
+        assertThatThrownBy(() -> invoiceService.voidInvoice(invoiceId))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Paid invoices cannot be voided");
+    }
+
+    @Test
+    void markInvoiceAsPaid_WhenTotalIsNull_ShouldSetZero() {
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        invoice.setTenantId(tenantId);
+        invoice.setTotal(null);
+        invoice.setDeletedAt(null);
+        
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(i -> i.getArgument(0));
+        
+        Invoice result = invoiceService.markInvoiceAsPaid(invoiceId);
+        
+        assertThat(result.getAmountPaid()).isEqualTo(0L);
+        assertThat(result.getAmountDue()).isEqualTo(0L);
+        assertThat(result.getStatus()).isEqualTo(InvoiceStatus.PAID);
+    }
 }
 
