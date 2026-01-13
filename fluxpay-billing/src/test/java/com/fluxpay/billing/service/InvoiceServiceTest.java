@@ -4,9 +4,18 @@ import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.repository.InvoiceItemRepository;
 import com.fluxpay.billing.repository.InvoiceRepository;
+import com.fluxpay.common.dto.InvoiceStatsResponse;
+import com.fluxpay.common.dto.Period;
 import com.fluxpay.common.enums.InvoiceStatus;
 import com.fluxpay.common.exception.ResourceNotFoundException;
+import com.fluxpay.common.exception.ValidationException;
+import com.fluxpay.product.entity.Price;
+import com.fluxpay.product.repository.PriceRepository;
 import com.fluxpay.security.context.TenantContext;
+import com.fluxpay.subscription.entity.Customer;
+import com.fluxpay.subscription.entity.Subscription;
+import com.fluxpay.subscription.repository.CustomerRepository;
+import com.fluxpay.subscription.repository.SubscriptionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,12 +47,25 @@ class InvoiceServiceTest {
     @Mock
     private InvoiceItemRepository invoiceItemRepository;
 
+    @Mock
+    private TaxService taxService;
+
+    @Mock
+    private CustomerRepository customerRepository;
+
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
+    @Mock
+    private PriceRepository priceRepository;
+
     @InjectMocks
     private InvoiceService invoiceService;
 
     private Invoice invoice;
     private UUID tenantId;
     private UUID customerId;
+    private UUID subscriptionId;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +73,7 @@ class InvoiceServiceTest {
         TenantContext.setCurrentTenant(tenantId);
         
         customerId = UUID.randomUUID();
+        subscriptionId = UUID.randomUUID();
         invoice = new Invoice();
         invoice.setId(UUID.randomUUID());
         invoice.setCustomerId(customerId);
@@ -123,8 +148,7 @@ class InvoiceServiceTest {
 
         List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
 
-        TaxService taxService = mock(TaxService.class);
-        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService);
+        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService, customerRepository, subscriptionRepository, priceRepository);
 
         when(taxService.calculateTax(anyLong(), anyString())).thenReturn(java.util.Map.of("taxAmount", 1000L, "taxRate", 0.10));
         when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
@@ -217,8 +241,7 @@ class InvoiceServiceTest {
 
         List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
 
-        TaxService taxService = mock(TaxService.class);
-        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService);
+        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService, customerRepository, subscriptionRepository, priceRepository);
 
         when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
         when(invoiceRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -340,8 +363,7 @@ class InvoiceServiceTest {
 
         List<InvoiceItem> items = Arrays.asList(new InvoiceItem());
 
-        TaxService taxService = mock(TaxService.class);
-        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService);
+        InvoiceService service = new InvoiceService(invoiceRepository, invoiceItemRepository, taxService, customerRepository, subscriptionRepository, priceRepository);
 
         java.util.Map<String, Object> taxDetails = new java.util.HashMap<>();
         taxDetails.put("taxAmount", 2000L);
@@ -358,6 +380,191 @@ class InvoiceServiceTest {
         assertThat(result.getTaxDetails()).isEqualTo(taxDetails);
         assertThat(result.getTotal()).isEqualTo(12000L);
         assertThat(result.getAmountDue()).isEqualTo(12000L);
+    }
+
+    @Test
+    void createInvoiceWithValidation_ShouldCreateInvoice() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        item.setPriceId(null);
+        
+        Invoice newInvoice = new Invoice();
+        newInvoice.setId(UUID.randomUUID());
+        newInvoice.setInvoiceNumber("INV-000001");
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(invoiceRepository.findTopByTenantIdOrderByCreatedAtDesc(any())).thenReturn(Optional.empty());
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(i -> {
+            Invoice inv = i.getArgument(0);
+            inv.setId(newInvoice.getId());
+            inv.setInvoiceNumber(newInvoice.getInvoiceNumber());
+            return inv;
+        });
+        when(invoiceItemRepository.save(any(InvoiceItem.class))).thenAnswer(i -> i.getArgument(0));
+        
+        Invoice result = invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        );
+        
+        assertThat(result).isNotNull();
+        assertThat(result.getCustomerId()).isEqualTo(customerId);
+        assertThat(result.getInvoiceDate()).isEqualTo(invoiceDate);
+        assertThat(result.getDueDate()).isEqualTo(dueDate);
+        assertThat(result.getCurrency()).isEqualTo("USD");
+        verify(customerRepository).findById(customerId);
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenCustomerNotFound_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenSubscriptionNotFound_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, subscriptionId, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenDueDateBeforeInvoiceDate_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().minusDays(1);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Due date must be after invoice date");
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenNoItems_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(), null
+        )).isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Invoice must have at least one item");
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void createInvoiceWithValidation_WhenPriceNotFound_ShouldThrowException() {
+        LocalDate invoiceDate = LocalDate.now();
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        
+        Customer customer = new Customer();
+        customer.setId(customerId);
+        customer.setTenantId(tenantId);
+        customer.setDeletedAt(null);
+        
+        UUID priceId = UUID.randomUUID();
+        InvoiceItem item = new InvoiceItem();
+        item.setDescription("Test item");
+        item.setAmount(10000L);
+        item.setPriceId(priceId);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(priceRepository.findById(priceId)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithValidation(
+                customerId, null, invoiceDate, dueDate, "USD", List.of(item), null
+        )).isInstanceOf(ResourceNotFoundException.class);
+        
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void getInvoiceStatsWithPeriod_ShouldReturnStats() {
+        LocalDate dateFrom = LocalDate.now().minusDays(30);
+        LocalDate dateTo = LocalDate.now();
+        
+        when(invoiceRepository.sumAmountDueByTenantId(tenantId)).thenReturn(50000L);
+        when(invoiceRepository.sumOverdueAmountByTenantId(eq(tenantId), any())).thenReturn(10000L);
+        
+        InvoiceStatsResponse result = invoiceService.getInvoiceStatsWithPeriod(dateFrom, dateTo);
+        
+        assertThat(result).isNotNull();
+        assertThat(result.getTotalOutstanding()).isEqualTo(50000L);
+        assertThat(result.getPastDue()).isEqualTo(10000L);
+        assertThat(result.getCurrency()).isEqualTo("USD");
+        assertThat(result.getPeriod().getFrom()).isEqualTo(dateFrom);
+        assertThat(result.getPeriod().getTo()).isEqualTo(dateTo);
+        verify(invoiceRepository).sumAmountDueByTenantId(tenantId);
+    }
+
+    @Test
+    void getInvoiceStatsWithPeriod_WithNullDates_ShouldUseDefaults() {
+        when(invoiceRepository.sumAmountDueByTenantId(tenantId)).thenReturn(50000L);
+        when(invoiceRepository.sumOverdueAmountByTenantId(eq(tenantId), any())).thenReturn(10000L);
+        
+        InvoiceStatsResponse result = invoiceService.getInvoiceStatsWithPeriod(null, null);
+        
+        assertThat(result).isNotNull();
+        assertThat(result.getPeriod().getFrom()).isNotNull();
+        assertThat(result.getPeriod().getTo()).isNotNull();
+        verify(invoiceRepository).sumAmountDueByTenantId(tenantId);
     }
 }
 

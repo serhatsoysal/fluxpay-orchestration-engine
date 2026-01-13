@@ -31,8 +31,6 @@ public class DunningScheduler {
     @Value("${DUNNING_OVERDUE_THRESHOLD_DAYS:3}")
     private int overdueThresholdDays;
 
-    @Value("${DUNNING_PAYMENT_PROCESSOR_NAME:mock}")
-    private String paymentProcessorName;
 
     public DunningScheduler(InvoiceRepository invoiceRepository, PaymentService paymentService) {
         this.invoiceRepository = invoiceRepository;
@@ -64,13 +62,12 @@ public class DunningScheduler {
         payment.setInvoiceId(invoice.getId());
         payment.setAmount(invoice.getAmountDue());
         payment.setCurrency(invoice.getCurrency());
-        payment.setProcessorName(paymentProcessorName);
         payment.setStatus(PaymentStatus.PENDING);
 
         try {
             Payment processedPayment = paymentService.createPayment(payment);
             
-            if (processedPayment.getStatus() == PaymentStatus.SUCCEEDED) {
+            if (processedPayment.getStatus() == PaymentStatus.COMPLETED) {
                 invoice.setStatus(InvoiceStatus.PAID);
                 invoice.setPaidAt(Instant.now());
                 invoice.setAmountPaid(invoice.getTotal());

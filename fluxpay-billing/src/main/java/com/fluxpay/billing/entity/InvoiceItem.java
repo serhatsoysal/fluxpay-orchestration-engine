@@ -30,6 +30,9 @@ public class InvoiceItem extends BaseEntity {
     @Column(name = "subscription_item_id")
     private UUID subscriptionItemId;
 
+    @Column(name = "price_id")
+    private UUID priceId;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 

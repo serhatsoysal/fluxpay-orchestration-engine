@@ -3,9 +3,10 @@ package com.fluxpay.common.enums;
 public enum PaymentStatus {
     PENDING,
     PROCESSING,
-    SUCCEEDED,
+    COMPLETED,
     FAILED,
-    CANCELED,
-    REQUIRES_ACTION
+    REFUNDED,
+    PARTIALLY_REFUNDED,
+    CANCELED
 }
 

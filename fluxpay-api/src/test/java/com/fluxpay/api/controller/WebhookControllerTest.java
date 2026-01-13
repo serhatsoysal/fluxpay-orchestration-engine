@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -80,6 +81,7 @@ class WebhookControllerTest {
         UUID webhookId = UUID.randomUUID();
         WebhookEndpoint webhook = new WebhookEndpoint();
         webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
         webhook.setUrl("https://example.com/webhook");
 
         when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
@@ -120,6 +122,7 @@ class WebhookControllerTest {
         UUID webhookId = UUID.randomUUID();
         WebhookEndpoint webhook = new WebhookEndpoint();
         webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
         webhook.setActive(true);
 
         when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
@@ -140,6 +143,170 @@ class WebhookControllerTest {
         ResponseEntity<Void> response = webhookController.deleteWebhook(webhookId);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        verify(webhookEndpointRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWebhook_ShouldReturnOkWhenExists() {
+        UUID webhookId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
+        webhook.setUrl("https://example.com/old-webhook");
+        webhook.setActive(true);
+        webhook.setDeletedAt(null);
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/new-webhook");
+        request.setEvents(List.of("invoice.created"));
+        request.setActive(true);
+        request.setSecret("new-secret-key-12345");
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+        when(webhookEndpointRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        ResponseEntity<WebhookEndpoint> response = webhookController.updateWebhook(webhookId, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getUrl()).isEqualTo("https://example.com/new-webhook");
+        verify(webhookEndpointRepository).save(argThat(w -> w.getUrl().equals("https://example.com/new-webhook")));
+    }
+
+    @Test
+    void updateWebhook_ShouldReturnNotFoundWhenNotExists() {
+        UUID webhookId = UUID.randomUUID();
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/webhook");
+        request.setEvents(List.of("invoice.created"));
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.empty());
+
+        try {
+            webhookController.updateWebhook(webhookId, request);
+        } catch (com.fluxpay.common.exception.ResourceNotFoundException e) {
+            assertThat(e.getMessage()).contains("Webhook");
+        }
+
+        verify(webhookEndpointRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWebhook_ShouldReturnNotFoundWhenDeleted() {
+        UUID webhookId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
+        webhook.setDeletedAt(Instant.now());
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/webhook");
+        request.setEvents(List.of("invoice.created"));
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+
+        try {
+            webhookController.updateWebhook(webhookId, request);
+        } catch (com.fluxpay.common.exception.ResourceNotFoundException e) {
+            assertThat(e.getMessage()).contains("Webhook");
+        }
+
+        verify(webhookEndpointRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWebhook_ShouldReturnNotFoundWhenDifferentTenant() {
+        UUID webhookId = UUID.randomUUID();
+        UUID differentTenantId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(differentTenantId);
+        webhook.setDeletedAt(null);
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/webhook");
+        request.setEvents(List.of("invoice.created"));
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+
+        try {
+            webhookController.updateWebhook(webhookId, request);
+        } catch (com.fluxpay.common.exception.ResourceNotFoundException e) {
+            assertThat(e.getMessage()).contains("Webhook");
+        }
+
+        verify(webhookEndpointRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWebhook_ShouldUpdateAllFields() {
+        UUID webhookId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
+        webhook.setUrl("https://example.com/old-webhook");
+        webhook.setActive(false);
+        webhook.setDeletedAt(null);
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/new-webhook");
+        request.setEvents(List.of("invoice.created", "payment.succeeded"));
+        request.setActive(true);
+        request.setSecret("new-secret-12345678");
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+        when(webhookEndpointRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        ResponseEntity<WebhookEndpoint> response = webhookController.updateWebhook(webhookId, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(webhookEndpointRepository).save(argThat(w ->
+                w.getUrl().equals("https://example.com/new-webhook") &&
+                w.getActive().equals(true) &&
+                w.getSecret().equals("new-secret-12345678")
+        ));
+    }
+
+    @Test
+    void updateWebhook_WithShortSecret_ShouldThrowException() {
+        UUID webhookId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
+        webhook.setDeletedAt(null);
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/webhook");
+        request.setEvents(List.of("invoice.created"));
+        request.setSecret("short");
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+
+        assertThatThrownBy(() -> webhookController.updateWebhook(webhookId, request))
+                .isInstanceOf(com.fluxpay.common.exception.ValidationException.class)
+                .hasMessageContaining("Secret must be at least 16 characters");
+
+        verify(webhookEndpointRepository, never()).save(any());
+    }
+
+    @Test
+    void updateWebhook_WithInvalidEventType_ShouldThrowException() {
+        UUID webhookId = UUID.randomUUID();
+        WebhookEndpoint webhook = new WebhookEndpoint();
+        webhook.setId(webhookId);
+        webhook.setTenantId(tenantId);
+        webhook.setDeletedAt(null);
+
+        com.fluxpay.api.dto.UpdateWebhookRequest request = new com.fluxpay.api.dto.UpdateWebhookRequest();
+        request.setUrl("https://example.com/webhook");
+        request.setEvents(List.of("invalid.event.type"));
+
+        when(webhookEndpointRepository.findById(webhookId)).thenReturn(Optional.of(webhook));
+
+        assertThatThrownBy(() -> webhookController.updateWebhook(webhookId, request))
+                .isInstanceOf(com.fluxpay.common.exception.ValidationException.class)
+                .hasMessageContaining("Invalid event type");
+
         verify(webhookEndpointRepository, never()).save(any());
     }
 }

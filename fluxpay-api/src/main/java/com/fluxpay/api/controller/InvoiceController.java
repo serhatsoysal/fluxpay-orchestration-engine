@@ -1,14 +1,22 @@
 package com.fluxpay.api.controller;
 
+import com.fluxpay.api.dto.CreateInvoiceRequest;
+import com.fluxpay.api.dto.InvoiceItemRequest;
 import com.fluxpay.billing.entity.Invoice;
 import com.fluxpay.billing.entity.InvoiceItem;
 import com.fluxpay.billing.service.InvoiceService;
-import com.fluxpay.common.dto.InvoiceStats;
+import com.fluxpay.common.dto.InvoiceStatsResponse;
 import com.fluxpay.common.dto.PageResponse;
 import com.fluxpay.common.enums.InvoiceStatus;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +30,31 @@ public class InvoiceController {
         this.invoiceService = invoiceService;
     }
 
+    @PostMapping
+    public ResponseEntity<Invoice> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
+        List<InvoiceItem> items = new ArrayList<>();
+        for (InvoiceItemRequest itemRequest : request.getItems()) {
+            InvoiceItem item = new InvoiceItem();
+            item.setPriceId(itemRequest.getPriceId());
+            item.setDescription(itemRequest.getDescription());
+            item.setQuantity(BigDecimal.valueOf(itemRequest.getQuantity()));
+            item.setUnitAmount(itemRequest.getUnitAmount());
+            item.setAmount(itemRequest.getAmount());
+            item.setIsProration(itemRequest.getIsProration());
+            items.add(item);
+        }
+        
+        Invoice invoice = invoiceService.createInvoiceWithValidation(
+                request.getCustomerId(),
+                request.getSubscriptionId(),
+                request.getInvoiceDate(),
+                request.getDueDate(),
+                request.getCurrency(),
+                items,
+                request.getMetadata());
+        return ResponseEntity.status(HttpStatus.CREATED).body(invoice);
+    }
+
     @GetMapping
     public ResponseEntity<PageResponse<Invoice>> getInvoices(
             @RequestParam(defaultValue = "0") int page,
@@ -32,8 +65,10 @@ public class InvoiceController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<InvoiceStats> getInvoiceStats() {
-        InvoiceStats stats = invoiceService.getInvoiceStats();
+    public ResponseEntity<InvoiceStatsResponse> getInvoiceStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo) {
+        InvoiceStatsResponse stats = invoiceService.getInvoiceStatsWithPeriod(dateFrom, dateTo);
         return ResponseEntity.ok(stats);
     }
 

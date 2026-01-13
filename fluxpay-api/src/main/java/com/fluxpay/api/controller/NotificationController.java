@@ -1,5 +1,6 @@
 package com.fluxpay.api.controller;
 
+import com.fluxpay.api.dto.MarkAllReadResponse;
 import com.fluxpay.common.dto.PageResponse;
 import com.fluxpay.tenant.entity.Notification;
 import com.fluxpay.tenant.service.NotificationService;
@@ -40,6 +41,13 @@ public class NotificationController {
     public ResponseEntity<Notification> markAsRead(@PathVariable UUID id) {
         Notification notification = notificationService.markAsRead(id);
         return ResponseEntity.ok(notification);
+    }
+
+    @PostMapping("/read-all")
+    public ResponseEntity<MarkAllReadResponse> markAllAsRead() {
+        UUID userId = getCurrentUserId();
+        long updatedCount = notificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(new MarkAllReadResponse(updatedCount, "All notifications marked as read"));
     }
 
     @GetMapping("/{id}")

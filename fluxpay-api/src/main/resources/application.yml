@@ -22,7 +22,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -31,6 +31,12 @@ spring:
         use_sql_comments: false
         jdbc:
           time_zone: UTC
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
   
   data:
     redis:

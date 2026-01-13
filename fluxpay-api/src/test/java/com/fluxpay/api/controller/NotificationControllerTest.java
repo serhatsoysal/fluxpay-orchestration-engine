@@ -164,5 +164,47 @@ class NotificationControllerTest {
         assertThat(response.getBody().getId()).isEqualTo(notification.getId());
         assertThat(response.getBody().getTitle()).isEqualTo("Test Notification");
     }
+
+    @Test
+    void markAllAsRead_ShouldReturnOkWithCount() {
+        com.fluxpay.api.dto.MarkAllReadResponse expectedResponse =
+                new com.fluxpay.api.dto.MarkAllReadResponse(5L, "All notifications marked as read");
+
+        when(notificationService.markAllAsRead(userId)).thenReturn(5L);
+
+        ResponseEntity<com.fluxpay.api.dto.MarkAllReadResponse> response =
+                notificationController.markAllAsRead();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getUpdatedCount()).isEqualTo(5);
+        assertThat(response.getBody().getMessage()).isEqualTo("All notifications marked as read");
+        verify(notificationService).markAllAsRead(userId);
+    }
+
+    @Test
+    void markAllAsRead_WithNoUnreadNotifications_ShouldReturnZeroCount() {
+        when(notificationService.markAllAsRead(userId)).thenReturn(0L);
+
+        ResponseEntity<com.fluxpay.api.dto.MarkAllReadResponse> response =
+                notificationController.markAllAsRead();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getUpdatedCount()).isEqualTo(0);
+        verify(notificationService).markAllAsRead(userId);
+    }
+
+    @Test
+    void markAllAsRead_WithMultipleUnread_ShouldReturnCorrectCount() {
+        when(notificationService.markAllAsRead(userId)).thenReturn(10L);
+
+        ResponseEntity<com.fluxpay.api.dto.MarkAllReadResponse> response =
+                notificationController.markAllAsRead();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getUpdatedCount()).isEqualTo(10);
+        verify(notificationService).markAllAsRead(userId);
+    }
 }
 

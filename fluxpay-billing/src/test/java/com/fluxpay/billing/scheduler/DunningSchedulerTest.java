@@ -42,7 +42,6 @@ class DunningSchedulerTest {
         setField(scheduler, "retryIntervalDays", 3);
         setField(scheduler, "maxAttempts", 3);
         setField(scheduler, "overdueThresholdDays", 3);
-        setField(scheduler, "paymentProcessorName", "mock");
     }
 
     private void setField(Object target, String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
@@ -66,7 +65,7 @@ class DunningSchedulerTest {
 
         Payment payment = new Payment();
         payment.setId(UUID.randomUUID());
-        payment.setStatus(PaymentStatus.SUCCEEDED);
+        payment.setStatus(PaymentStatus.COMPLETED);
 
         when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
         when(paymentService.createPayment(any())).thenReturn(payment);
@@ -258,7 +257,7 @@ class DunningSchedulerTest {
 
         Payment payment = new Payment();
         payment.setId(UUID.randomUUID());
-        payment.setStatus(PaymentStatus.SUCCEEDED);
+        payment.setStatus(PaymentStatus.COMPLETED);
 
         when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
         when(paymentService.createPayment(any())).thenReturn(payment);
@@ -301,7 +300,7 @@ class DunningSchedulerTest {
 
         Payment payment = new Payment();
         payment.setId(UUID.randomUUID());
-        payment.setStatus(PaymentStatus.SUCCEEDED);
+        payment.setStatus(PaymentStatus.COMPLETED);
 
         when(invoiceRepository.findAll()).thenReturn(List.of(invoice));
         when(paymentService.createPayment(any())).thenReturn(payment);
