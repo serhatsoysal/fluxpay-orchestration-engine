@@ -59,7 +59,7 @@ public class PaymentService {
     public Payment getPaymentById(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         return paymentRepository.findById(id)
-                .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))
+                .filter(p -> p.getDeletedAt() == null && p.getTenantId() != null && p.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", id));
     }
 

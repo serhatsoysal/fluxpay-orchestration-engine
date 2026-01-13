@@ -76,7 +76,10 @@ public class InvoiceService {
 
         if (countryCode != null) {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
-            invoice.setTax((Long) taxCalculation.get("taxAmount"));
+            Object taxAmountObj = taxCalculation.get("taxAmount");
+            Long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
+                            taxAmountObj instanceof Number ? ((Number) taxAmountObj).longValue() : 0L;
+            invoice.setTax(taxAmount);
             invoice.setTaxDetails(taxCalculation);
             invoice.setTotal(invoice.getSubtotal() + invoice.getTax());
             invoice.setAmountDue(invoice.getTotal());
@@ -158,7 +161,7 @@ public class InvoiceService {
                 .orElse(null);
 
         int nextNumber = 1;
-        if (lastInvoice != null) {
+        if (lastInvoice != null && lastInvoice.getInvoiceNumber() != null) {
             String lastNumber = lastInvoice.getInvoiceNumber().replaceAll("\\D+", "");
             if (!lastNumber.isEmpty()) {
                 try {
