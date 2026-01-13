@@ -70,9 +70,12 @@ public class PaymentController {
             @Valid @RequestBody CreateRefundRequest request,
             HttpServletRequest httpRequest) {
         String token = extractToken(httpRequest);
-        String role = jwtTokenProvider.getRole(token);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         
-        if (!"OWNER".equals(role) && !"ADMIN".equals(role)) {
+        String role = jwtTokenProvider.getRole(token);
+        if (role == null || (!"OWNER".equals(role) && !"ADMIN".equals(role))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         

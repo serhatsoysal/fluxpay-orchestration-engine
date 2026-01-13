@@ -191,13 +191,13 @@ public class InvoiceService {
         UUID tenantId = TenantContext.getCurrentTenantId();
         
         if (!customerRepository.findById(customerId)
-                .filter(c -> c.getTenantId().equals(tenantId) && c.getDeletedAt() == null)
+                .filter(c -> c.getTenantId() != null && c.getTenantId().equals(tenantId) && c.getDeletedAt() == null)
                 .isPresent()) {
             throw new ResourceNotFoundException("Customer", customerId);
         }
         
         if (subscriptionId != null && !subscriptionRepository.findById(subscriptionId)
-                .filter(s -> s.getTenantId().equals(tenantId) && s.getDeletedAt() == null)
+                .filter(s -> s.getTenantId() != null && s.getTenantId().equals(tenantId) && s.getDeletedAt() == null)
                 .isPresent()) {
             throw new ResourceNotFoundException("Subscription", subscriptionId);
         }
@@ -226,7 +226,7 @@ public class InvoiceService {
         invoice.setMetadata(metadata);
         
         Long subtotal = items.stream()
-                .mapToLong(InvoiceItem::getAmount)
+                .mapToLong(item -> item.getAmount() != null ? item.getAmount() : 0L)
                 .sum();
         
         invoice.setSubtotal(subtotal);

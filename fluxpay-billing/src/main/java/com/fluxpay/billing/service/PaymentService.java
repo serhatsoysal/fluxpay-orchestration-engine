@@ -37,6 +37,16 @@ public class PaymentService {
     }
 
     public Payment createPayment(Payment payment) {
+        if (payment == null) {
+            throw new ValidationException("Payment cannot be null");
+        }
+        if (payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new ValidationException("Payment amount must be greater than zero");
+        }
+        if (payment.getCustomerId() == null) {
+            throw new ValidationException("Payment customer ID cannot be null");
+        }
+        
         payment.setStatus(PaymentStatus.PROCESSING);
         Payment savedPayment = paymentRepository.save(payment);
         
@@ -109,13 +119,23 @@ public class PaymentService {
     }
 
     public Refund createRefund(UUID paymentId, Long amount, String reason, java.util.Map<String, Object> metadata) {
+        if (amount == null || amount <= 0) {
+            throw new ValidationException("Refund amount must be greater than zero");
+        }
+        
         Payment payment = getPaymentById(paymentId);
         
         if (payment.getStatus() != PaymentStatus.COMPLETED && payment.getStatus() != PaymentStatus.PARTIALLY_REFUNDED) {
             throw new ValidationException("Payment cannot be refunded. Current status: " + payment.getStatus());
         }
         
-        long refundableAmount = payment.getAmount() - payment.getRefundedAmount();
+        Long currentRefundedAmount = payment.getRefundedAmount() != null ? payment.getRefundedAmount() : 0L;
+        Long paymentAmount = payment.getAmount();
+        if (paymentAmount == null) {
+            throw new ValidationException("Payment amount cannot be null");
+        }
+        
+        long refundableAmount = paymentAmount - currentRefundedAmount;
         if (amount > refundableAmount) {
             throw new ValidationException("Refund amount exceeds refundable amount");
         }
@@ -131,8 +151,9 @@ public class PaymentService {
         
         Refund savedRefund = refundRepository.save(refund);
         
-        payment.setRefundedAmount(payment.getRefundedAmount() + amount);
-        if (payment.getRefundedAmount().equals(payment.getAmount())) {
+        Long newRefundedAmount = currentRefundedAmount + amount;
+        payment.setRefundedAmount(newRefundedAmount);
+        if (newRefundedAmount.equals(paymentAmount)) {
             payment.setStatus(PaymentStatus.REFUNDED);
         } else {
             payment.setStatus(PaymentStatus.PARTIALLY_REFUNDED);
