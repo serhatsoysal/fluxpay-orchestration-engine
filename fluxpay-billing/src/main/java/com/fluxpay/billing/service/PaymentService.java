@@ -112,7 +112,7 @@ public class PaymentService {
             throw new ValidationException("Payment cannot be refunded. Current status: " + payment.getStatus());
         }
         
-        Long refundableAmount = payment.getAmount() - payment.getRefundedAmount();
+        long refundableAmount = payment.getAmount() - payment.getRefundedAmount();
         if (amount > refundableAmount) {
             throw new ValidationException("Refund amount exceeds refundable amount");
         }

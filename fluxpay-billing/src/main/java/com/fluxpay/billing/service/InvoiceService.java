@@ -273,8 +273,8 @@ public class InvoiceService {
         Long previousTotalOutstanding = totalOutstanding;
         Long previousPastDue = pastDue;
         
-        Double avgPaymentTime = 5.5;
-        Double previousAvgPaymentTime = 6.0;
+        double avgPaymentTime = 5.5;
+        double previousAvgPaymentTime = 6.0;
         
         return new InvoiceStatsResponse(
                 totalOutstanding,
