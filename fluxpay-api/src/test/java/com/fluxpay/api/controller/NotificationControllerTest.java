@@ -167,9 +167,6 @@ class NotificationControllerTest {
 
     @Test
     void markAllAsRead_ShouldReturnOkWithCount() {
-        com.fluxpay.api.dto.MarkAllReadResponse expectedResponse =
-                new com.fluxpay.api.dto.MarkAllReadResponse(5L, "All notifications marked as read");
-
         when(notificationService.markAllAsRead(userId)).thenReturn(5L);
 
         ResponseEntity<com.fluxpay.api.dto.MarkAllReadResponse> response =
@@ -177,7 +174,7 @@ class NotificationControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getUpdatedCount()).isEqualTo(5);
+        assertThat(response.getBody().getUpdatedCount()).isEqualTo(5L);
         assertThat(response.getBody().getMessage()).isEqualTo("All notifications marked as read");
         verify(notificationService).markAllAsRead(userId);
     }
@@ -191,7 +188,7 @@ class NotificationControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getUpdatedCount()).isEqualTo(0);
+        assertThat(response.getBody().getUpdatedCount()).isZero();
         verify(notificationService).markAllAsRead(userId);
     }
 

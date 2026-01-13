@@ -101,17 +101,19 @@ class InvoiceRepositoryIT {
     void findByTenantIdAndCustomerId_ShouldReturnOnlyTenantInvoices() {
         List<Invoice> invoices = invoiceRepository.findByTenantIdAndCustomerId(tenantId1, customerId1);
 
-        assertThat(invoices).hasSize(2);
-        assertThat(invoices).allMatch(i -> i.getTenantId().equals(tenantId1));
-        assertThat(invoices).allMatch(i -> i.getCustomerId().equals(customerId1));
+        assertThat(invoices)
+                .hasSize(2)
+                .allMatch(i -> i.getTenantId().equals(tenantId1))
+                .allMatch(i -> i.getCustomerId().equals(customerId1));
     }
 
     @Test
     void findBySubscriptionId_ShouldReturnAllInvoicesForSubscription() {
         List<Invoice> invoices = invoiceRepository.findBySubscriptionId(subscriptionId1);
 
-        assertThat(invoices).hasSize(2);
-        assertThat(invoices).allMatch(i -> i.getSubscriptionId().equals(subscriptionId1));
+        assertThat(invoices)
+                .hasSize(2)
+                .allMatch(i -> i.getSubscriptionId().equals(subscriptionId1));
     }
 
     @Test
@@ -160,7 +162,7 @@ class InvoiceRepositoryIT {
 
         assertThat(openCount).isEqualTo(2L);
         assertThat(paidCount).isEqualTo(1L);
-        assertThat(draftCount).isEqualTo(0L);
+        assertThat(draftCount).isZero();
     }
 
     @Test
@@ -253,7 +255,7 @@ class InvoiceRepositoryIT {
         LocalDate today = LocalDate.now();
         Long overdueAmount = invoiceRepository.sumOverdueAmountByTenantId(tenantId1, today);
 
-        assertThat(overdueAmount).isEqualTo(0L);
+        assertThat(overdueAmount).isZero();
     }
 
     @Test

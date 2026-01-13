@@ -121,7 +121,7 @@ class NotificationRepositoryIT {
 
         long unreadCount = notificationRepository.countUnreadByTenantIdAndUserId(tenantId1, userId1);
 
-        assertThat(unreadCount).isEqualTo(0L);
+        assertThat(unreadCount).isZero();
     }
 
     @Test
@@ -131,7 +131,7 @@ class NotificationRepositoryIT {
         assertThat(updated).isEqualTo(2L);
 
         long unreadCount = notificationRepository.countUnreadByTenantIdAndUserId(tenantId1, userId1);
-        assertThat(unreadCount).isEqualTo(0L);
+        assertThat(unreadCount).isZero();
     }
 
     @Test

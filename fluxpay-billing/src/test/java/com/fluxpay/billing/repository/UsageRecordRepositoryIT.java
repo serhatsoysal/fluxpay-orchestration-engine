@@ -60,7 +60,6 @@ class UsageRecordRepositoryIT {
 
         Instant now = Instant.now();
         Instant start = now.minusSeconds(3600);
-        Instant end = now.plusSeconds(3600);
 
         record1 = createUsageRecord(subscriptionId1, subscriptionItemId1, BigDecimal.valueOf(10), start);
         record2 = createUsageRecord(subscriptionId1, subscriptionItemId1, BigDecimal.valueOf(20), now);
@@ -86,9 +85,10 @@ class UsageRecordRepositoryIT {
 
         List<UsageRecord> records = usageRecordRepository.findBySubscriptionIdAndTimestampBetween(subscriptionId1, start, end);
 
-        assertThat(records).hasSize(3);
-        assertThat(records).allMatch(r -> r.getSubscriptionId().equals(subscriptionId1));
-        assertThat(records).allMatch(r -> !r.getTimestamp().isBefore(start) && !r.getTimestamp().isAfter(end));
+        assertThat(records)
+                .hasSize(3)
+                .allMatch(r -> r.getSubscriptionId().equals(subscriptionId1))
+                .allMatch(r -> !r.getTimestamp().isBefore(start) && !r.getTimestamp().isAfter(end));
     }
 
     @Test
@@ -100,8 +100,9 @@ class UsageRecordRepositoryIT {
                 subscriptionItemId1, start, end
         );
 
-        assertThat(records).hasSize(2);
-        assertThat(records).allMatch(r -> r.getSubscriptionItemId().equals(subscriptionItemId1));
+        assertThat(records)
+                .hasSize(2)
+                .allMatch(r -> r.getSubscriptionItemId().equals(subscriptionItemId1));
         for (int i = 0; i < records.size() - 1; i++) {
             assertThat(records.get(i).getTimestamp())
                     .isAfterOrEqualTo(records.get(i + 1).getTimestamp());

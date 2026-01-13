@@ -313,7 +313,7 @@ class InvoiceControllerTest {
                 new com.fluxpay.common.dto.Period(dateFrom, dateTo)
         );
 
-        when(invoiceService.getInvoiceStatsWithPeriod(eq(dateFrom), eq(dateTo))).thenReturn(stats);
+        when(invoiceService.getInvoiceStatsWithPeriod(dateFrom, dateTo)).thenReturn(stats);
 
         ResponseEntity<com.fluxpay.common.dto.InvoiceStatsResponse> response =
                 invoiceController.getInvoiceStats(dateFrom, dateTo);

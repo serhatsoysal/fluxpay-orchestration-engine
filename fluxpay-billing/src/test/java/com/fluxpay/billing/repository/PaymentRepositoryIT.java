@@ -96,25 +96,28 @@ class PaymentRepositoryIT {
     void findByTenantIdAndCustomerId_ShouldReturnOnlyTenantPayments() {
         List<Payment> payments = paymentRepository.findByTenantIdAndCustomerId(tenantId1, customerId1);
 
-        assertThat(payments).hasSize(2);
-        assertThat(payments).allMatch(p -> p.getTenantId().equals(tenantId1));
-        assertThat(payments).allMatch(p -> p.getCustomerId().equals(customerId1));
+        assertThat(payments)
+                .hasSize(2)
+                .allMatch(p -> p.getTenantId().equals(tenantId1))
+                .allMatch(p -> p.getCustomerId().equals(customerId1));
     }
 
     @Test
     void findByInvoiceId_ShouldReturnAllPaymentsForInvoice() {
         List<Payment> payments = paymentRepository.findByInvoiceId(invoiceId1);
 
-        assertThat(payments).hasSize(2);
-        assertThat(payments).allMatch(p -> p.getInvoiceId().equals(invoiceId1));
+        assertThat(payments)
+                .hasSize(2)
+                .allMatch(p -> p.getInvoiceId().equals(invoiceId1));
     }
 
     @Test
     void findByStatus_ShouldReturnPaymentsByStatus() {
         List<Payment> payments = paymentRepository.findByStatus(PaymentStatus.COMPLETED);
 
-        assertThat(payments).hasSize(3);
-        assertThat(payments).allMatch(p -> p.getStatus().equals(PaymentStatus.COMPLETED));
+        assertThat(payments)
+                .hasSize(3)
+                .allMatch(p -> p.getStatus().equals(PaymentStatus.COMPLETED));
     }
 
     @Test
@@ -196,7 +199,7 @@ class PaymentRepositoryIT {
 
         Long revenue = paymentRepository.sumRevenueByTenantId(tenantId1, dateFrom, dateTo);
 
-        assertThat(revenue).isEqualTo(0L);
+        assertThat(revenue).isZero();
     }
 
     @Test
@@ -290,8 +293,9 @@ class PaymentRepositoryIT {
         Optional<Payment> result = paymentRepository.findByIdempotencyKey(tenantId1, idempotencyKey);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getMetadata()).isNotNull();
-        assertThat(result.get().getMetadata().get("idempotencyKey")).isEqualTo(idempotencyKey);
+        assertThat(result.get().getMetadata())
+                .isNotNull()
+                .containsEntry("idempotencyKey", idempotencyKey);
     }
 
     @Test

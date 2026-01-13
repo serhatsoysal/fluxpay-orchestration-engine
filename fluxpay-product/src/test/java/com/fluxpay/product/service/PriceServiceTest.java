@@ -127,8 +127,9 @@ class PriceServiceTest {
 
         List<Price> result = priceService.getActivePricesByProduct(productId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEmpty();
+        assertThat(result)
+                .isNotNull()
+                .isEmpty();
         verify(priceRepository).findByProductIdAndActive(productId, true);
     }
 

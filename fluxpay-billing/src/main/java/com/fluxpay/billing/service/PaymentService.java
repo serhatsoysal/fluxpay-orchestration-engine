@@ -123,7 +123,10 @@ public class PaymentService {
             throw new ValidationException("Refund amount must be greater than zero");
         }
         
-        Payment payment = getPaymentById(paymentId);
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        Payment payment = paymentRepository.findById(paymentId)
+                .filter(p -> p.getDeletedAt() == null && p.getTenantId() != null && p.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
         
         if (payment.getStatus() != PaymentStatus.COMPLETED && payment.getStatus() != PaymentStatus.PARTIALLY_REFUNDED) {
             throw new ValidationException("Payment cannot be refunded. Current status: " + payment.getStatus());

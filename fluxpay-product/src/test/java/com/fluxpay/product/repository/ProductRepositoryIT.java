@@ -73,17 +73,19 @@ class ProductRepositoryIT {
     void findByTenantIdAndActive_ShouldReturnActiveProducts() {
         List<Product> activeProducts = productRepository.findByTenantIdAndActive(tenantId1, true);
 
-        assertThat(activeProducts).hasSize(2);
-        assertThat(activeProducts).allMatch(p -> p.getTenantId().equals(tenantId1));
-        assertThat(activeProducts).allMatch(Product::getActive);
+        assertThat(activeProducts)
+                .hasSize(2)
+                .allMatch(p -> p.getTenantId().equals(tenantId1))
+                .allMatch(Product::getActive);
     }
 
     @Test
     void findByTenantId_ShouldReturnAllTenantProducts() {
         List<Product> products = productRepository.findByTenantId(tenantId1);
 
-        assertThat(products).hasSize(3);
-        assertThat(products).allMatch(p -> p.getTenantId().equals(tenantId1));
+        assertThat(products)
+                .hasSize(3)
+                .allMatch(p -> p.getTenantId().equals(tenantId1));
     }
 
     @Test

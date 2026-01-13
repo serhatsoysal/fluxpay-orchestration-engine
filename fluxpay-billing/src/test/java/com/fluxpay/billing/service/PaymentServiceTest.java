@@ -281,7 +281,7 @@ class PaymentServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getPage()).isZero();
         assertThat(result.getSize()).isEqualTo(20);
         verify(paymentRepository).findPaymentsWithFilters(
                 eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()

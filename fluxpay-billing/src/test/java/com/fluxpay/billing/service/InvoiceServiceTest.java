@@ -184,7 +184,7 @@ class InvoiceServiceTest {
         assertThat(result.getStatus()).isEqualTo(InvoiceStatus.PAID);
         assertThat(result.getPaidAt()).isNotNull();
         assertThat(result.getAmountPaid()).isEqualTo(invoice.getTotal());
-        assertThat(result.getAmountDue()).isEqualTo(0L);
+        assertThat(result.getAmountDue()).isZero();
     }
 
     @Test
@@ -212,10 +212,10 @@ class InvoiceServiceTest {
 
     @Test
     void getInvoicesBySubscription_ShouldReturnInvoices() {
-        UUID subscriptionId = UUID.randomUUID();
-        invoice.setSubscriptionId(subscriptionId);
+        UUID testSubscriptionId = UUID.randomUUID();
+        invoice.setSubscriptionId(testSubscriptionId);
 
-        when(invoiceRepository.findBySubscriptionId(subscriptionId)).thenReturn(Arrays.asList(invoice));
+        when(invoiceRepository.findBySubscriptionId(testSubscriptionId)).thenReturn(Arrays.asList(invoice));
 
         List<Invoice> result = invoiceService.getInvoicesBySubscription(subscriptionId);
 
@@ -862,8 +862,8 @@ class InvoiceServiceTest {
         
         Invoice result = invoiceService.markInvoiceAsPaid(invoiceId);
         
-        assertThat(result.getAmountPaid()).isEqualTo(0L);
-        assertThat(result.getAmountDue()).isEqualTo(0L);
+        assertThat(result.getAmountPaid()).isZero();
+        assertThat(result.getAmountDue()).isZero();
         assertThat(result.getStatus()).isEqualTo(InvoiceStatus.PAID);
     }
 }

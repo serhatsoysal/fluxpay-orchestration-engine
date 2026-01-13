@@ -70,8 +70,8 @@ public class InvoiceService {
 
         for (InvoiceItem item : items) {
             if (item != null) {
-                item.setInvoiceId(savedInvoice.getId());
-                invoiceItemRepository.save(item);
+            item.setInvoiceId(savedInvoice.getId());
+            invoiceItemRepository.save(item);
             }
         }
 
@@ -92,10 +92,16 @@ public class InvoiceService {
 
         if (countryCode != null && !countryCode.isEmpty() && invoice.getSubtotal() != null) {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
-            if (taxCalculation != null) {
+            if (taxCalculation != null && taxCalculation.containsKey("taxAmount")) {
                 Object taxAmountObj = taxCalculation.get("taxAmount");
-                long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
-                                taxAmountObj instanceof Number ? ((Number) taxAmountObj).longValue() : 0L;
+                long taxAmount;
+                if (taxAmountObj instanceof Long longValue) {
+                    taxAmount = longValue;
+                } else if (taxAmountObj instanceof Number number) {
+                    taxAmount = number.longValue();
+                } else {
+                    taxAmount = 0L;
+                }
                 invoice.setTax(taxAmount);
                 invoice.setTaxDetails(taxCalculation);
                 Long subtotal = invoice.getSubtotal();
@@ -108,8 +114,8 @@ public class InvoiceService {
 
         for (InvoiceItem item : items) {
             if (item != null) {
-                item.setInvoiceId(savedInvoice.getId());
-                invoiceItemRepository.save(item);
+            item.setInvoiceId(savedInvoice.getId());
+            invoiceItemRepository.save(item);
             }
         }
 
@@ -163,8 +169,8 @@ public class InvoiceService {
     public Invoice finalizeInvoice(UUID id) {
         Invoice invoice = getInvoiceById(id);
         if (invoice.getStatus() == InvoiceStatus.DRAFT) {
-            invoice.setStatus(InvoiceStatus.OPEN);
-            return invoiceRepository.save(invoice);
+        invoice.setStatus(InvoiceStatus.OPEN);
+        return invoiceRepository.save(invoice);
         }
         throw new ValidationException("Only DRAFT invoices can be finalized");
     }

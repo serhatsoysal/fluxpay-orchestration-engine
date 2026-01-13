@@ -135,9 +135,10 @@ class ApiKeyServiceTest {
 
         List<ApiKey> result = apiKeyService.getActiveApiKeysByTenant(tenantId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(key -> key.getRevokedAt() == null);
+        assertThat(result)
+                .isNotNull()
+                .hasSize(2)
+                .allMatch(key -> key.getRevokedAt() == null);
         verify(apiKeyRepository).findByTenantIdAndRevokedAtIsNull(tenantId);
     }
 
@@ -147,8 +148,9 @@ class ApiKeyServiceTest {
 
         List<ApiKey> result = apiKeyService.getActiveApiKeysByTenant(tenantId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEmpty();
+        assertThat(result)
+                .isNotNull()
+                .isEmpty();
         verify(apiKeyRepository).findByTenantIdAndRevokedAtIsNull(tenantId);
     }
 

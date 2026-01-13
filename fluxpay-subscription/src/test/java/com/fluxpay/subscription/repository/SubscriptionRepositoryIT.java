@@ -93,8 +93,9 @@ class SubscriptionRepositoryIT {
     void findByStatus_ShouldReturnSubscriptionsByStatus() {
         List<Subscription> active = subscriptionRepository.findByStatus(SubscriptionStatus.ACTIVE);
 
-        assertThat(active).hasSize(3);
-        assertThat(active).allMatch(s -> s.getStatus().equals(SubscriptionStatus.ACTIVE));
+        assertThat(active)
+                .hasSize(3)
+                .allMatch(s -> s.getStatus().equals(SubscriptionStatus.ACTIVE));
     }
 
     @Test
@@ -108,7 +109,8 @@ class SubscriptionRepositoryIT {
                 List.of(SubscriptionStatus.ACTIVE), Instant.now()
         );
 
-        assertThat(expired).hasSize(2);
+        assertThat(expired)
+                .hasSize(2);
         assertThat(expired).allMatch(s -> s.getCurrentPeriodEnd().isBefore(Instant.now()));
     }
 

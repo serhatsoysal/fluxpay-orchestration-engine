@@ -181,7 +181,7 @@ class PaymentControllerTest {
                 new Period(dateFrom, dateTo)
         );
 
-        when(paymentService.getPaymentStats(eq(dateFrom), eq(dateTo))).thenReturn(stats);
+        when(paymentService.getPaymentStats(dateFrom, dateTo)).thenReturn(stats);
 
         ResponseEntity<PaymentStatsResponse> response = paymentController.getPaymentStats(dateFrom, dateTo);
 

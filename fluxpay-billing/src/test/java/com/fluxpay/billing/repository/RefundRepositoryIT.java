@@ -83,8 +83,9 @@ class RefundRepositoryIT {
 
         List<Refund> refunds = refundRepository.findByPaymentId(paymentId);
 
-        assertThat(refunds).hasSize(2);
-        assertThat(refunds).allMatch(r -> r.getPaymentId().equals(paymentId));
+        assertThat(refunds)
+                .hasSize(2)
+                .allMatch(r -> r.getPaymentId().equals(paymentId));
         assertThat(refunds).extracting(Refund::getId)
                 .containsExactlyInAnyOrder(saved.get(0).getId(), saved.get(1).getId());
     }
