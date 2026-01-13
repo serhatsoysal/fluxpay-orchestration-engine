@@ -65,6 +65,11 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    public long markAllAsRead(UUID userId) {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        return notificationRepository.markAllAsRead(tenantId, userId);
+    }
+
     @Transactional(readOnly = true)
     public Notification getNotificationById(UUID id) {
         return notificationRepository.findById(id)

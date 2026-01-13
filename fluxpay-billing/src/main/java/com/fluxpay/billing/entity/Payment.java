@@ -1,6 +1,7 @@
 package com.fluxpay.billing.entity;
 
 import com.fluxpay.common.entity.BaseEntity;
+import com.fluxpay.common.enums.PaymentMethod;
 import com.fluxpay.common.enums.PaymentStatus;
 import com.fluxpay.security.context.TenantContext;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,33 +33,30 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private PaymentStatus status = PaymentStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
+    private PaymentMethod paymentMethod;
+
     @Column(nullable = false)
     private Long amount;
 
     @Column(nullable = false, length = 3)
     private String currency = "USD";
 
-    @Column(name = "processor_payment_id")
-    private String processorPaymentId;
+    @Column(name = "payment_intent_id")
+    private String paymentIntentId;
 
-    @Column(name = "processor_name", nullable = false, length = 50)
-    private String processorName;
+    @Column(name = "transaction_id")
+    private String transactionId;
 
-    @Column(name = "payment_method_type", length = 50)
-    private String paymentMethodType;
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "payment_method_details", columnDefinition = "jsonb")
-    private Map<String, Object> paymentMethodDetails;
+    @Column(name = "refunded_amount", nullable = false)
+    private Long refundedAmount = 0L;
 
-    @Column(name = "failure_code", length = 100)
-    private String failureCode;
-
-    @Column(name = "failure_message", columnDefinition = "TEXT")
-    private String failureMessage;
-
-    @Column(name = "idempotency_key", unique = true)
-    private String idempotencyKey;
+    @Column(name = "paid_at")
+    private Instant paidAt;
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
