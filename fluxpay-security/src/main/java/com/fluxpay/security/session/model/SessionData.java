@@ -38,6 +38,6 @@ public class SessionData implements Serializable {
     
     private long requestCount;
     private Instant lastRequestTime;
-    private Map<String, Object> metadata;
+    private transient Map<String, Object> metadata;
 }
 

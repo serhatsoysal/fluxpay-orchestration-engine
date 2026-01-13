@@ -110,9 +110,8 @@ class SubscriptionRepositoryIT {
                 List.of(SubscriptionStatus.ACTIVE), Instant.now()
         );
 
-        assertThat(expired)
-                .hasSize(2);
-        assertThat(expired).allMatch(s -> s.getCurrentPeriodEnd().isBefore(Instant.now()));
+        assertThat(expired).hasSize(2)
+                .allMatch(s -> s.getCurrentPeriodEnd().isBefore(Instant.now()));
     }
 
     @Test

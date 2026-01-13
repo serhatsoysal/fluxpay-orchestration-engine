@@ -67,6 +67,10 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public Payment getPaymentById(UUID id) {
+        return findPaymentById(id);
+    }
+
+    private Payment findPaymentById(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         return paymentRepository.findById(id)
                 .filter(p -> p.getDeletedAt() == null && p.getTenantId() != null && p.getTenantId().equals(tenantId))
@@ -74,16 +78,15 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<Payment> getPayments(
-            int page, int size,
-            PaymentStatus status,
-            PaymentMethod paymentMethod,
-            UUID invoiceId,
-            UUID customerId,
-            LocalDate dateFrom,
-            LocalDate dateTo,
-            Long amountMin,
-            Long amountMax) {
+    public PageResponse<Payment> getPayments(int page, int size, com.fluxpay.billing.dto.PaymentFilterDto filters) {
+        PaymentStatus status = filters.getStatus();
+        PaymentMethod paymentMethod = filters.getPaymentMethod();
+        UUID invoiceId = filters.getInvoiceId();
+        UUID customerId = filters.getCustomerId();
+        LocalDate dateFrom = filters.getDateFrom();
+        LocalDate dateTo = filters.getDateTo();
+        Long amountMin = filters.getAmountMin();
+        Long amountMax = filters.getAmountMax();
         UUID tenantId = TenantContext.getCurrentTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 100));
         
@@ -123,10 +126,7 @@ public class PaymentService {
             throw new ValidationException("Refund amount must be greater than zero");
         }
         
-        UUID tenantId = TenantContext.getCurrentTenantId();
-        Payment payment = paymentRepository.findById(paymentId)
-                .filter(p -> p.getDeletedAt() == null && p.getTenantId() != null && p.getTenantId().equals(tenantId))
-                .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
+        Payment payment = findPaymentById(paymentId);
         
         if (payment.getStatus() != PaymentStatus.COMPLETED && payment.getStatus() != PaymentStatus.PARTIALLY_REFUNDED) {
             throw new ValidationException("Payment cannot be refunded. Current status: " + payment.getStatus());

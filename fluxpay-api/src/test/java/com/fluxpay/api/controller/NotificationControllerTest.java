@@ -84,7 +84,7 @@ class NotificationControllerTest {
                 true
         );
 
-        when(notificationService.getNotifications(eq(userId), eq(0), eq(20))).thenReturn(pageResponse);
+        when(notificationService.getNotifications(userId, 0, 20)).thenReturn(pageResponse);
 
         ResponseEntity<PageResponse<Notification>> response = notificationController.getNotifications(0, 20);
 
@@ -105,7 +105,7 @@ class NotificationControllerTest {
                 true
         );
 
-        when(notificationService.getNotifications(eq(userId), eq(0), eq(20))).thenReturn(pageResponse);
+        when(notificationService.getNotifications(userId, 0, 20)).thenReturn(pageResponse);
 
         ResponseEntity<PageResponse<Notification>> response = notificationController.getNotifications(0, 20);
 
@@ -121,8 +121,7 @@ class NotificationControllerTest {
         ResponseEntity<Map<String, Long>> response = notificationController.getUnreadCount();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("count")).isEqualTo(5L);
+        assertThat(response.getBody()).isNotNull().containsEntry("count", 5L);
     }
 
     @Test
@@ -132,8 +131,7 @@ class NotificationControllerTest {
         ResponseEntity<Map<String, Long>> response = notificationController.getUnreadCount();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("count")).isEqualTo(0L);
+        assertThat(response.getBody()).isNotNull().containsEntry("count", 0L);
     }
 
     @Test

@@ -113,8 +113,6 @@ class AuthControllerTest {
         String deviceFingerprint = "fingerprint-123";
         String ipAddress = "127.0.0.1";
         String accessToken = "access-token";
-        String sessionId = UUID.randomUUID().toString();
-        String refreshToken = UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
 
         when(userService.getUserByEmail("test@example.com")).thenReturn(user);
         when(userService.verifyPassword(user, "password123")).thenReturn(true);
@@ -162,7 +160,7 @@ class AuthControllerTest {
         when(authentication.getPrincipal()).thenReturn(userId);
         when(authentication.getCredentials()).thenReturn(createSessionData(sessionId));
 
-        doNothing().when(sessionService).invalidateSession(eq(tenantId), eq(userId), eq(sessionId));
+        doNothing().when(sessionService).invalidateSession(tenantId, userId, sessionId);
 
         ResponseEntity<Void> response = authController.logout();
 
@@ -189,7 +187,7 @@ class AuthControllerTest {
         when(authentication.getPrincipal()).thenReturn(userId);
         when(authentication.getCredentials()).thenReturn(createSessionData(currentSessionId));
 
-        doNothing().when(sessionService).invalidateAllUserSessions(eq(tenantId), eq(userId), eq(currentSessionId));
+        doNothing().when(sessionService).invalidateAllUserSessions(tenantId, userId, currentSessionId);
 
         ResponseEntity<Void> response = authController.logoutAll();
 

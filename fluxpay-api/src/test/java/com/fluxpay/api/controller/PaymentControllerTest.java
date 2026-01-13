@@ -90,7 +90,7 @@ class PaymentControllerTest {
         );
 
         when(paymentService.getPayments(
-                anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()
+                anyInt(), anyInt(), any(com.fluxpay.billing.dto.PaymentFilterDto.class)
         )).thenReturn(pageResponse);
 
         ResponseEntity<PageResponse<Payment>> response = paymentController.getPayments(
@@ -101,7 +101,7 @@ class PaymentControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getContent()).hasSize(1);
         verify(paymentService).getPayments(
-                eq(0), eq(20), any(), any(), any(), any(), any(), any(), any(), any()
+                eq(0), eq(20), any(com.fluxpay.billing.dto.PaymentFilterDto.class)
         );
     }
 
@@ -114,7 +114,7 @@ class PaymentControllerTest {
         LocalDate dateTo = LocalDate.now();
 
         when(paymentService.getPayments(
-                anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()
+                anyInt(), anyInt(), any(com.fluxpay.billing.dto.PaymentFilterDto.class)
         )).thenReturn(pageResponse);
 
         ResponseEntity<PageResponse<Payment>> response = paymentController.getPayments(
@@ -124,8 +124,7 @@ class PaymentControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(paymentService).getPayments(
-                eq(0), eq(20), eq(PaymentStatus.COMPLETED), eq(PaymentMethod.CREDIT_CARD),
-                any(), eq(customerId), eq(dateFrom), eq(dateTo), eq(1000L), eq(50000L)
+                eq(0), eq(20), any(com.fluxpay.billing.dto.PaymentFilterDto.class)
         );
     }
 

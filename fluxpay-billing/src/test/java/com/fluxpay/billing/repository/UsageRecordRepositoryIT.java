@@ -69,12 +69,12 @@ class UsageRecordRepositoryIT {
         usageRecordRepository.saveAll(List.of(record1, record2, record3, record4));
     }
 
-    private UsageRecord createUsageRecord(UUID subscriptionId, UUID subscriptionItemId, BigDecimal quantity, Instant recordTimestamp) {
+    private UsageRecord createUsageRecord(UUID subscriptionId, UUID subscriptionItemId, BigDecimal quantity, Instant usageTimestamp) {
         UsageRecord record = new UsageRecord();
         record.setSubscriptionId(subscriptionId);
         record.setSubscriptionItemId(subscriptionItemId);
         record.setQuantity(quantity);
-        record.setTimestamp(recordTimestamp);
+        record.setTimestamp(usageTimestamp);
         return record;
     }
 

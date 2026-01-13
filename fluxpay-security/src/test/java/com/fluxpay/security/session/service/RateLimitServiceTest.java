@@ -43,18 +43,10 @@ class RateLimitServiceTest {
         verify(redisTemplate).expire(anyString(), eq(Duration.ofMinutes(1).getSeconds()), any());
     }
 
-    @Test
-    void testIsRateLimited_ShouldReturnTrue_WhenOverLimit() {
-        when(valueOperations.increment(anyString())).thenReturn(6L);
-
-        boolean result = rateLimitService.isRateLimited("test-id", "session_creation");
-
-        assertTrue(result);
-    }
-
-    @Test
-    void testIsRateLimited_ShouldReturnTrue_WhenAtLimit() {
-        when(valueOperations.increment(anyString())).thenReturn(6L);
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = {6L, 7L, 100L})
+    void testIsRateLimited_ShouldReturnTrue_WhenAtOrOverLimit(long count) {
+        when(valueOperations.increment(anyString())).thenReturn(count);
 
         boolean result = rateLimitService.isRateLimited("test-id", "session_creation");
 
@@ -70,20 +62,15 @@ class RateLimitServiceTest {
         assertFalse(result);
     }
 
-    @Test
-    void testIsRateLimited_ForSessionRequests() {
-        when(valueOperations.increment(anyString())).thenReturn(1001L);
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "session_requests, 1001",
+        "unknown_operation, 101"
+    })
+    void testIsRateLimited_ForDifferentOperations_ShouldReturnTrue_WhenOverLimit(String operation, long count) {
+        when(valueOperations.increment(anyString())).thenReturn(count);
 
-        boolean result = rateLimitService.isRateLimited("test-id", "session_requests");
-
-        assertTrue(result);
-    }
-
-    @Test
-    void testIsRateLimited_ForDefaultOperation() {
-        when(valueOperations.increment(anyString())).thenReturn(101L);
-
-        boolean result = rateLimitService.isRateLimited("test-id", "unknown_operation");
+        boolean result = rateLimitService.isRateLimited("test-id", operation);
 
         assertTrue(result);
     }

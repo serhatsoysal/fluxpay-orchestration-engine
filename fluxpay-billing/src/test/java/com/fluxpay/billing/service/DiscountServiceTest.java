@@ -164,7 +164,7 @@ class DiscountServiceTest {
         when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
 
         Long discount = discountService.calculateDiscount(0L, "SAVE20");
-        assertThat(discount).isEqualTo(0L);
+        assertThat(discount).isZero();
     }
 
     @Test
@@ -187,8 +187,8 @@ class DiscountServiceTest {
         when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> discountService.applyDiscount(UUID.randomUUID(), UUID.randomUUID(), "NOTFOUND", 10000L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Coupon not found");
+                .isInstanceOf(com.fluxpay.common.exception.ResourceNotFoundException.class)
+                .hasMessageContaining("Coupon");
     }
 
     @Test
@@ -203,7 +203,7 @@ class DiscountServiceTest {
         when(couponRepository.findByTenantIdAndCode(any(), any())).thenReturn(Optional.of(coupon));
 
         Long discount = discountService.calculateDiscount(0L, "SAVE10");
-        assertThat(discount).isEqualTo(0L);
+        assertThat(discount).isZero();
     }
 
     @Test

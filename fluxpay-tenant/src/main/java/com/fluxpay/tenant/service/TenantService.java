@@ -29,6 +29,10 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public Tenant getTenantById(UUID id) {
+        return findTenantById(id);
+    }
+
+    private Tenant findTenantById(UUID id) {
         return tenantRepository.findById(id)
                 .filter(t -> t.getDeletedAt() == null)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant", id));
@@ -42,7 +46,7 @@ public class TenantService {
     }
 
     public Tenant updateTenant(UUID id, Tenant updatedTenant) {
-        Tenant tenant = getTenantById(id);
+        Tenant tenant = findTenantById(id);
         
         if (!tenant.getSlug().equals(updatedTenant.getSlug()) 
                 && tenantRepository.existsBySlug(updatedTenant.getSlug())) {
@@ -60,19 +64,19 @@ public class TenantService {
     }
 
     public void suspendTenant(UUID id) {
-        Tenant tenant = getTenantById(id);
+        Tenant tenant = findTenantById(id);
         tenant.setStatus(TenantStatus.SUSPENDED);
         tenantRepository.save(tenant);
     }
 
     public void activateTenant(UUID id) {
-        Tenant tenant = getTenantById(id);
+        Tenant tenant = findTenantById(id);
         tenant.setStatus(TenantStatus.ACTIVE);
         tenantRepository.save(tenant);
     }
 
     public void deleteTenant(UUID id) {
-        Tenant tenant = getTenantById(id);
+        Tenant tenant = findTenantById(id);
         tenant.softDelete();
         tenant.setStatus(TenantStatus.DELETED);
         tenantRepository.save(tenant);

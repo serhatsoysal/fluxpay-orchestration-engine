@@ -28,43 +28,43 @@ class UsageRecordTest {
 
     @Test
     void prePersist_ShouldSetTenantId() {
-        UsageRecord record = new UsageRecord();
-        record.setSubscriptionId(UUID.randomUUID());
-        record.setSubscriptionItemId(UUID.randomUUID());
-        record.setMeterName("api_calls");
-        record.setQuantity(BigDecimal.valueOf(100));
+        UsageRecord usageRecord = new UsageRecord();
+        usageRecord.setSubscriptionId(UUID.randomUUID());
+        usageRecord.setSubscriptionItemId(UUID.randomUUID());
+        usageRecord.setMeterName("api_calls");
+        usageRecord.setQuantity(BigDecimal.valueOf(100));
 
-        record.prePersist();
+        usageRecord.prePersist();
 
-        assertThat(record.getTenantId()).isEqualTo(tenantId);
+        assertThat(usageRecord.getTenantId()).isEqualTo(tenantId);
     }
 
     @Test
     void prePersist_ShouldSetTimestamp() {
-        UsageRecord record = new UsageRecord();
-        record.setSubscriptionId(UUID.randomUUID());
-        record.setSubscriptionItemId(UUID.randomUUID());
-        record.setMeterName("api_calls");
-        record.setQuantity(BigDecimal.valueOf(100));
+        UsageRecord usageRecord = new UsageRecord();
+        usageRecord.setSubscriptionId(UUID.randomUUID());
+        usageRecord.setSubscriptionItemId(UUID.randomUUID());
+        usageRecord.setMeterName("api_calls");
+        usageRecord.setQuantity(BigDecimal.valueOf(100));
 
-        record.prePersist();
+        usageRecord.prePersist();
 
-        assertThat(record.getTimestamp()).isNotNull();
+        assertThat(usageRecord.getTimestamp()).isNotNull();
     }
 
     @Test
     void prePersist_ShouldNotOverrideExistingTimestamp() {
         Instant existingTimestamp = Instant.now().minusSeconds(3600);
-        UsageRecord record = new UsageRecord();
-        record.setSubscriptionId(UUID.randomUUID());
-        record.setSubscriptionItemId(UUID.randomUUID());
-        record.setMeterName("api_calls");
-        record.setQuantity(BigDecimal.valueOf(100));
-        record.setTimestamp(existingTimestamp);
+        UsageRecord usageRecord = new UsageRecord();
+        usageRecord.setSubscriptionId(UUID.randomUUID());
+        usageRecord.setSubscriptionItemId(UUID.randomUUID());
+        usageRecord.setMeterName("api_calls");
+        usageRecord.setQuantity(BigDecimal.valueOf(100));
+        usageRecord.setTimestamp(existingTimestamp);
 
-        record.prePersist();
+        usageRecord.prePersist();
 
-        assertThat(record.getTimestamp()).isEqualTo(existingTimestamp);
+        assertThat(usageRecord.getTimestamp()).isEqualTo(existingTimestamp);
     }
 }
 

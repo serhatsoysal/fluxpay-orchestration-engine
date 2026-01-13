@@ -775,22 +775,22 @@ class InvoiceServiceTest {
 
     @Test
     void createInvoice_WhenItemsIsNull_ShouldThrowException() {
-        Invoice invoice = new Invoice();
-        invoice.setCustomerId(customerId);
-        invoice.setSubtotal(10000L);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setCustomerId(customerId);
+        testInvoice.setSubtotal(10000L);
         
-        assertThatThrownBy(() -> invoiceService.createInvoice(invoice, null))
+        assertThatThrownBy(() -> invoiceService.createInvoice(testInvoice, null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("must have at least one item");
     }
 
     @Test
     void createInvoice_WhenItemsIsEmpty_ShouldThrowException() {
-        Invoice invoice = new Invoice();
-        invoice.setCustomerId(customerId);
-        invoice.setSubtotal(10000L);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setCustomerId(customerId);
+        testInvoice.setSubtotal(10000L);
         
-        assertThatThrownBy(() -> invoiceService.createInvoice(invoice, List.of()))
+        assertThatThrownBy(() -> invoiceService.createInvoice(testInvoice, List.of()))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("must have at least one item");
     }
@@ -807,11 +807,11 @@ class InvoiceServiceTest {
 
     @Test
     void createInvoiceWithTax_WhenItemsIsNull_ShouldThrowException() {
-        Invoice invoice = new Invoice();
-        invoice.setCustomerId(customerId);
-        invoice.setSubtotal(10000L);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setCustomerId(customerId);
+        testInvoice.setSubtotal(10000L);
         
-        assertThatThrownBy(() -> invoiceService.createInvoiceWithTax(invoice, null, "US"))
+        assertThatThrownBy(() -> invoiceService.createInvoiceWithTax(testInvoice, null, "US"))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("must have at least one item");
     }
@@ -819,13 +819,13 @@ class InvoiceServiceTest {
     @Test
     void finalizeInvoice_WhenNotDraft_ShouldThrowException() {
         UUID invoiceId = UUID.randomUUID();
-        Invoice invoice = new Invoice();
-        invoice.setId(invoiceId);
-        invoice.setTenantId(tenantId);
-        invoice.setStatus(InvoiceStatus.OPEN);
-        invoice.setDeletedAt(null);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setId(invoiceId);
+        testInvoice.setTenantId(tenantId);
+        testInvoice.setStatus(InvoiceStatus.OPEN);
+        testInvoice.setDeletedAt(null);
         
-        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(testInvoice));
         
         assertThatThrownBy(() -> invoiceService.finalizeInvoice(invoiceId))
                 .isInstanceOf(ValidationException.class)
@@ -835,13 +835,13 @@ class InvoiceServiceTest {
     @Test
     void voidInvoice_WhenPaid_ShouldThrowException() {
         UUID invoiceId = UUID.randomUUID();
-        Invoice invoice = new Invoice();
-        invoice.setId(invoiceId);
-        invoice.setTenantId(tenantId);
-        invoice.setStatus(InvoiceStatus.PAID);
-        invoice.setDeletedAt(null);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setId(invoiceId);
+        testInvoice.setTenantId(tenantId);
+        testInvoice.setStatus(InvoiceStatus.PAID);
+        testInvoice.setDeletedAt(null);
         
-        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(testInvoice));
         
         assertThatThrownBy(() -> invoiceService.voidInvoice(invoiceId))
                 .isInstanceOf(ValidationException.class)
@@ -851,13 +851,13 @@ class InvoiceServiceTest {
     @Test
     void markInvoiceAsPaid_WhenTotalIsNull_ShouldSetZero() {
         UUID invoiceId = UUID.randomUUID();
-        Invoice invoice = new Invoice();
-        invoice.setId(invoiceId);
-        invoice.setTenantId(tenantId);
-        invoice.setTotal(null);
-        invoice.setDeletedAt(null);
+        Invoice testInvoice = new Invoice();
+        testInvoice.setId(invoiceId);
+        testInvoice.setTenantId(tenantId);
+        testInvoice.setTotal(null);
+        testInvoice.setDeletedAt(null);
         
-        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(testInvoice));
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(i -> i.getArgument(0));
         
         Invoice result = invoiceService.markInvoiceAsPaid(invoiceId);

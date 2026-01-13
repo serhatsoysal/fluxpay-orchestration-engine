@@ -4,6 +4,9 @@ import java.util.UUID;
 
 public class TenantContext {
 
+    private TenantContext() {
+    }
+
     private static final ThreadLocal<UUID> CURRENT_TENANT = new ThreadLocal<>();
 
     public static void setCurrentTenant(UUID tenantId) {

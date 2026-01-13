@@ -45,8 +45,16 @@ public class PaymentController {
             @RequestParam(required = false) Long amountMin,
             @RequestParam(required = false) Long amountMax) {
         PageResponse<Payment> response = paymentService.getPayments(
-                page, size, status, paymentMethod, invoiceId, customerId,
-                dateFrom, dateTo, amountMin, amountMax);
+                page, size, com.fluxpay.billing.dto.PaymentFilterDto.builder()
+                        .status(status)
+                        .paymentMethod(paymentMethod)
+                        .invoiceId(invoiceId)
+                        .customerId(customerId)
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
+                        .amountMin(amountMin)
+                        .amountMax(amountMax)
+                        .build());
         return ResponseEntity.ok(response);
     }
 

@@ -45,6 +45,10 @@ public class SubscriptionService {
 
     @Transactional(readOnly = true)
     public Subscription getSubscriptionById(UUID id) {
+        return findSubscriptionById(id);
+    }
+
+    private Subscription findSubscriptionById(UUID id) {
         return subscriptionRepository.findById(id)
                 .filter(s -> s.getDeletedAt() == null)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", id));
@@ -78,13 +82,13 @@ public class SubscriptionService {
     }
 
     public Subscription activateSubscription(UUID id) {
-        Subscription subscription = getSubscriptionById(id);
+        Subscription subscription = findSubscriptionById(id);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         return subscriptionRepository.save(subscription);
     }
 
     public Subscription cancelSubscription(UUID id, String reason, boolean immediately) {
-        Subscription subscription = getSubscriptionById(id);
+        Subscription subscription = findSubscriptionById(id);
         
         subscription.setCancellationReason(reason);
         subscription.setCanceledAt(Instant.now());
@@ -106,8 +110,12 @@ public class SubscriptionService {
     }
 
     public Subscription resumeSubscription(UUID id) {
-        Subscription subscription = getSubscriptionById(id);
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        return updateSubscriptionStatus(id, SubscriptionStatus.ACTIVE);
+    }
+
+    private Subscription updateSubscriptionStatus(UUID id, SubscriptionStatus status) {
+        Subscription subscription = findSubscriptionById(id);
+        subscription.setStatus(status);
         return subscriptionRepository.save(subscription);
     }
 }

@@ -164,7 +164,7 @@ class SessionServiceTest {
 
         verify(sessionRepository).delete(tenantId, userId, testSession.getSessionId());
         verify(sessionRepository, atLeastOnce()).blacklistToken(any(), any());
-        verify(auditService).logSessionTerminated(eq(testSession), eq("Manual invalidation"));
+        verify(auditService).logSessionTerminated(testSession, "Manual invalidation");
     }
 
     @Test
@@ -222,7 +222,7 @@ class SessionServiceTest {
                 .isInstanceOf(SessionInvalidException.class)
                 .hasMessageContaining("Device verification failed");
 
-        verify(securityService).recordSuspiciousActivity(eq(testSession), eq("Device fingerprint mismatch"));
+        verify(securityService).recordSuspiciousActivity(testSession, "Device fingerprint mismatch");
     }
 
     @Test

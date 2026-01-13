@@ -38,6 +38,10 @@ public class ApiKeyService {
 
     @Transactional(readOnly = true)
     public ApiKey getApiKeyById(UUID id) {
+        return findApiKeyById(id);
+    }
+
+    private ApiKey findApiKeyById(UUID id) {
         return apiKeyRepository.findById(id)
                 .filter(k -> !k.isRevoked())
                 .orElseThrow(() -> new ResourceNotFoundException("ApiKey", id));
@@ -56,13 +60,13 @@ public class ApiKeyService {
     }
 
     public void revokeApiKey(UUID id) {
-        ApiKey apiKey = getApiKeyById(id);
+        ApiKey apiKey = findApiKeyById(id);
         apiKey.setRevokedAt(Instant.now());
         apiKeyRepository.save(apiKey);
     }
 
     public void updateLastUsed(UUID id) {
-        ApiKey apiKey = getApiKeyById(id);
+        ApiKey apiKey = findApiKeyById(id);
         apiKey.setLastUsedAt(Instant.now());
         apiKeyRepository.save(apiKey);
     }

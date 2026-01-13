@@ -28,7 +28,7 @@ class SecurityConfigTest {
     private MockHttpServletRequest request;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         securityConfig = new SecurityConfig(jwtAuthenticationFilter);
         request = new MockHttpServletRequest();
         request.setRequestURI("/api/test");
@@ -44,8 +44,8 @@ class SecurityConfigTest {
     void passwordEncoder_ReturnsBCryptPasswordEncoder() {
         PasswordEncoder encoder = securityConfig.passwordEncoder();
 
-        assertThat(encoder).isNotNull();
-        assertThat(encoder).isInstanceOf(org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.class);
+        assertThat(encoder).isNotNull()
+                .isInstanceOf(org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.class);
     }
 
     @Test

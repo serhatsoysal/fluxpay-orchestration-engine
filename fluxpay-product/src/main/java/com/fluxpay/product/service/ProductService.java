@@ -33,6 +33,10 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Product getProductById(UUID id) {
+        return findProductById(id);
+    }
+
+    private Product findProductById(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         return productRepository.findById(id)
                 .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))
@@ -52,7 +56,7 @@ public class ProductService {
     }
 
     public Product updateProduct(UUID id, Product updatedProduct) {
-        Product product = getProductById(id);
+        Product product = findProductById(id);
         UUID tenantId = TenantContext.getCurrentTenantId();
         
         if (updatedProduct.getName() != null && !product.getName().equals(updatedProduct.getName())) {
@@ -75,13 +79,13 @@ public class ProductService {
     }
 
     public void deactivateProduct(UUID id) {
-        Product product = getProductById(id);
+        Product product = findProductById(id);
         product.setActive(false);
         productRepository.save(product);
     }
 
     public void deleteProduct(UUID id) {
-        Product product = getProductById(id);
+        Product product = findProductById(id);
         product.softDelete();
         productRepository.save(product);
     }

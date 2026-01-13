@@ -210,8 +210,7 @@ class PaymentServiceTest {
 
         List<Payment> result = paymentService.getPaymentsByCustomer(customerId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
         assertThat(result.get(0).getCustomerId()).isEqualTo(customerId);
         verify(paymentRepository).findByTenantIdAndCustomerId(tenantId, customerId);
     }
@@ -224,8 +223,7 @@ class PaymentServiceTest {
 
         List<Payment> result = paymentService.getPaymentsByInvoice(invoiceId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotNull().hasSize(1);
         assertThat(result.get(0).getInvoiceId()).isEqualTo(invoiceId);
         verify(paymentRepository).findByInvoiceId(invoiceId);
     }
@@ -276,7 +274,7 @@ class PaymentServiceTest {
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
-                0, 20, null, null, null, null, null, null, null, null
+                0, 20, com.fluxpay.billing.dto.PaymentFilterDto.builder().build()
         );
 
         assertThat(result).isNotNull();
@@ -301,8 +299,16 @@ class PaymentServiceTest {
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
-                0, 20, PaymentStatus.COMPLETED, PaymentMethod.CREDIT_CARD,
-                invoiceId, customerId, dateFrom, dateTo, 1000L, 50000L
+                0, 20, com.fluxpay.billing.dto.PaymentFilterDto.builder()
+                        .status(PaymentStatus.COMPLETED)
+                        .paymentMethod(PaymentMethod.CREDIT_CARD)
+                        .invoiceId(invoiceId)
+                        .customerId(customerId)
+                        .dateFrom(dateFrom)
+                        .dateTo(dateTo)
+                        .amountMin(1000L)
+                        .amountMax(50000L)
+                        .build()
         );
 
         assertThat(result).isNotNull();
@@ -321,7 +327,7 @@ class PaymentServiceTest {
                 eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(), any()
         )).thenReturn(paymentPage);
 
-        paymentService.getPayments(0, 200, null, null, null, null, null, null, null, null);
+        paymentService.getPayments(0, 200, com.fluxpay.billing.dto.PaymentFilterDto.builder().build());
 
         verify(paymentRepository).findPaymentsWithFilters(
                 eq(tenantId), any(), any(), any(), any(), any(), any(), any(), any(),
@@ -563,7 +569,9 @@ class PaymentServiceTest {
         )).thenReturn(paymentPage);
 
         PageResponse<Payment> result = paymentService.getPayments(
-                0, 20, null, null, null, null, dateFrom, null, null, null
+                0, 20, com.fluxpay.billing.dto.PaymentFilterDto.builder()
+                        .dateFrom(dateFrom)
+                        .build()
         );
 
         assertThat(result).isNotNull();

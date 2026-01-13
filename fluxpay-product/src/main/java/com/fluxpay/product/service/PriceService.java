@@ -25,9 +25,7 @@ public class PriceService {
 
     @Transactional(readOnly = true)
     public Price getPriceById(UUID id) {
-        return priceRepository.findById(id)
-                .filter(p -> p.getDeletedAt() == null)
-                .orElseThrow(() -> new ResourceNotFoundException("Price", id));
+        return findPriceById(id);
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +39,7 @@ public class PriceService {
     }
 
     public Price updatePrice(UUID id, Price updatedPrice) {
-        Price price = getPriceById(id);
+        Price price = findPriceById(id);
         
         price.setUnitAmount(updatedPrice.getUnitAmount());
         price.setCurrency(updatedPrice.getCurrency());
@@ -53,9 +51,15 @@ public class PriceService {
     }
 
     public void deactivatePrice(UUID id) {
-        Price price = getPriceById(id);
+        Price price = findPriceById(id);
         price.setActive(false);
         priceRepository.save(price);
+    }
+
+    private Price findPriceById(UUID id) {
+        return priceRepository.findById(id)
+                .filter(p -> p.getDeletedAt() == null)
+                .orElseThrow(() -> new ResourceNotFoundException("Price", id));
     }
 }
 

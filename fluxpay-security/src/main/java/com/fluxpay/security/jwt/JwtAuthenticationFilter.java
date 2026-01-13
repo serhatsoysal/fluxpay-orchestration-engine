@@ -68,33 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                SessionData session = null;
-                
-                try {
-                    if (sessionId != null) {
-                        session = sessionService.getSession(tenantId, userId, sessionId);
-                    }
-                } catch (Exception ignored) {
-                }
-                
-                if (session == null) {
-                    try {
-                        String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
-                        session = buildSessionData(token, userId, tenantId, role, sessionId, request, deviceFingerprint);
-                        sessionService.createSession(session);
-                    } catch (Exception ignored) {
-                        session = buildSessionData(token, userId, tenantId, role, sessionId, request, null);
-                    }
-                } else {
-                    try {
-                        String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
-                        if (!sessionSecurityService.verifyDeviceFingerprint(session, deviceFingerprint)) {
-                            sessionSecurityService.recordSuspiciousActivity(session, "Device fingerprint mismatch");
-                        }
-                        sessionService.updateLastAccess(session);
-                    } catch (Exception ignored) {
-                    }
-                }
+                SessionData session = retrieveOrCreateSession(token, userId, tenantId, role, sessionId, request);
 
                 TenantContext.setCurrentTenant(tenantId);
 
@@ -171,6 +145,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .lastAccess(Instant.now())
                 .requestCount(0)
                 .build();
+    }
+
+    private SessionData retrieveOrCreateSession(String token, UUID userId, UUID tenantId, String role, 
+                                                String sessionId, HttpServletRequest request) {
+        SessionData session = null;
+        
+        try {
+            if (sessionId != null) {
+                session = sessionService.getSession(tenantId, userId, sessionId);
+            }
+        } catch (Exception ignored) {
+        }
+        
+        if (session == null) {
+            return createNewSession(token, userId, tenantId, role, sessionId, request);
+        } else {
+            updateExistingSession(session, request);
+            return session;
+        }
+    }
+
+    private SessionData createNewSession(String token, UUID userId, UUID tenantId, String role, 
+                                         String sessionId, HttpServletRequest request) {
+        try {
+            String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
+            SessionData newSession = buildSessionData(token, userId, tenantId, role, sessionId, request, deviceFingerprint);
+            sessionService.createSession(newSession);
+            return newSession;
+        } catch (Exception ignored) {
+            return buildSessionData(token, userId, tenantId, role, sessionId, request, null);
+        }
+    }
+
+    private void updateExistingSession(SessionData session, HttpServletRequest request) {
+        try {
+            String deviceFingerprint = deviceFingerprintService.generateFingerprint(request);
+            if (!sessionSecurityService.verifyDeviceFingerprint(session, deviceFingerprint)) {
+                sessionSecurityService.recordSuspiciousActivity(session, "Device fingerprint mismatch");
+            }
+            sessionService.updateLastAccess(session);
+        } catch (Exception ignored) {
+        }
     }
 
     private String resolveToken(HttpServletRequest request) {

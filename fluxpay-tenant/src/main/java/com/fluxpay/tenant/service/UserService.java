@@ -34,6 +34,10 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getUserById(UUID id) {
+        return findUserById(id);
+    }
+
+    private User findUserById(UUID id) {
         return userRepository.findById(id)
                 .filter(u -> u.getDeletedAt() == null)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
@@ -58,14 +62,14 @@ public class UserService {
     }
 
     public void updateLastLogin(UUID userId, String ipAddress) {
-        User user = getUserById(userId);
+        User user = findUserById(userId);
         user.setLastLoginAt(Instant.now());
         user.setLastLoginIp(ipAddress);
         userRepository.save(user);
     }
 
     public void deleteUser(UUID id) {
-        User user = getUserById(id);
+        User user = findUserById(id);
         user.softDelete();
         userRepository.save(user);
     }
