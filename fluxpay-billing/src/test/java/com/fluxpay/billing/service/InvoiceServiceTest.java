@@ -203,6 +203,7 @@ class InvoiceServiceTest {
         InvoiceItem item = new InvoiceItem();
         item.setInvoiceId(invoiceId);
 
+        when(invoiceRepository.findById(invoiceId)).thenReturn(Optional.of(invoice));
         when(invoiceItemRepository.findByInvoiceId(invoiceId)).thenReturn(Arrays.asList(item));
 
         List<InvoiceItem> result = invoiceService.getInvoiceItems(invoiceId);
@@ -212,10 +213,9 @@ class InvoiceServiceTest {
 
     @Test
     void getInvoicesBySubscription_ShouldReturnInvoices() {
-        UUID testSubscriptionId = UUID.randomUUID();
-        invoice.setSubscriptionId(testSubscriptionId);
+        invoice.setSubscriptionId(subscriptionId);
 
-        when(invoiceRepository.findBySubscriptionId(testSubscriptionId)).thenReturn(Arrays.asList(invoice));
+        when(invoiceRepository.findBySubscriptionId(subscriptionId)).thenReturn(Arrays.asList(invoice));
 
         List<Invoice> result = invoiceService.getInvoicesBySubscription(subscriptionId);
 
