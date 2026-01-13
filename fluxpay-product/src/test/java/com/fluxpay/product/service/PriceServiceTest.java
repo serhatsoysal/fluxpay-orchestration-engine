@@ -115,9 +115,10 @@ class PriceServiceTest {
 
         List<Price> result = priceService.getActivePricesByProduct(productId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(Price::getActive);
+        assertThat(result)
+                .isNotNull()
+                .hasSize(2)
+                .allMatch(Price::getActive);
         verify(priceRepository).findByProductIdAndActive(productId, true);
     }
 
@@ -148,8 +149,9 @@ class PriceServiceTest {
 
         List<Price> result = priceService.getAllPricesByProduct(productId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
+        assertThat(result)
+                .isNotNull()
+                .hasSize(2);
         verify(priceRepository).findByProductId(productId);
     }
 

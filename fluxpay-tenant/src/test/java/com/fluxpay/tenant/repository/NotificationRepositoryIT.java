@@ -142,7 +142,9 @@ class NotificationRepositoryIT {
 
         Pageable pageable = PageRequest.of(0, 10);
         Page<Notification> result = notificationRepository.findByTenantIdAndUserId(tenantId1, userId1, pageable);
-        assertThat(result.getContent()).allMatch(Notification::getRead);
+        assertThat(result.getContent())
+                .isNotEmpty()
+                .allMatch(Notification::getRead);
     }
 
     @Test
