@@ -572,5 +572,99 @@ class PaymentServiceTest {
         );
     }
 
+    @Test
+    void createPayment_WhenPaymentIsNull_ShouldThrowException() {
+        assertThatThrownBy(() -> paymentService.createPayment(null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("cannot be null");
+    }
+
+    @Test
+    void createPayment_WhenAmountIsNull_ShouldThrowException() {
+        payment.setAmount(null);
+        
+        assertThatThrownBy(() -> paymentService.createPayment(payment))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createPayment_WhenAmountIsZero_ShouldThrowException() {
+        payment.setAmount(0L);
+        
+        assertThatThrownBy(() -> paymentService.createPayment(payment))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createPayment_WhenAmountIsNegative_ShouldThrowException() {
+        payment.setAmount(-100L);
+        
+        assertThatThrownBy(() -> paymentService.createPayment(payment))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createPayment_WhenCustomerIdIsNull_ShouldThrowException() {
+        payment.setCustomerId(null);
+        
+        assertThatThrownBy(() -> paymentService.createPayment(payment))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("customer ID cannot be null");
+    }
+
+    @Test
+    void createRefund_WhenAmountIsNull_ShouldThrowException() {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setAmount(10000L);
+        payment.setRefundedAmount(0L);
+        
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+        
+        assertThatThrownBy(() -> paymentService.createRefund(paymentId, null, "Reason", null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createRefund_WhenAmountIsZero_ShouldThrowException() {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setAmount(10000L);
+        payment.setRefundedAmount(0L);
+        
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+        
+        assertThatThrownBy(() -> paymentService.createRefund(paymentId, 0L, "Reason", null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createRefund_WhenAmountIsNegative_ShouldThrowException() {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setAmount(10000L);
+        payment.setRefundedAmount(0L);
+        
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+        
+        assertThatThrownBy(() -> paymentService.createRefund(paymentId, -100L, "Reason", null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("amount must be greater than zero");
+    }
+
+    @Test
+    void createRefund_WhenPaymentAmountIsNull_ShouldThrowException() {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setAmount(null);
+        payment.setRefundedAmount(0L);
+        
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+        
+        assertThatThrownBy(() -> paymentService.createRefund(paymentId, 5000L, "Reason", null))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Payment amount cannot be null");
+    }
 }
 
