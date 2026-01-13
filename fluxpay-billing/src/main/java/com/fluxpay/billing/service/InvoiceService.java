@@ -55,6 +55,13 @@ public class InvoiceService {
     }
 
     public Invoice createInvoice(Invoice invoice, List<InvoiceItem> items) {
+        if (invoice == null) {
+            throw new ValidationException("Invoice cannot be null");
+        }
+        if (items == null || items.isEmpty()) {
+            throw new ValidationException("Invoice must have at least one item");
+        }
+        
         if (invoice.getInvoiceNumber() == null) {
             invoice.setInvoiceNumber(generateInvoiceNumber());
         }
@@ -62,34 +69,48 @@ public class InvoiceService {
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
         for (InvoiceItem item : items) {
-            item.setInvoiceId(savedInvoice.getId());
-            invoiceItemRepository.save(item);
+            if (item != null) {
+                item.setInvoiceId(savedInvoice.getId());
+                invoiceItemRepository.save(item);
+            }
         }
 
         return savedInvoice;
     }
 
     public Invoice createInvoiceWithTax(Invoice invoice, List<InvoiceItem> items, String countryCode) {
+        if (invoice == null) {
+            throw new ValidationException("Invoice cannot be null");
+        }
+        if (items == null || items.isEmpty()) {
+            throw new ValidationException("Invoice must have at least one item");
+        }
+        
         if (invoice.getInvoiceNumber() == null) {
             invoice.setInvoiceNumber(generateInvoiceNumber());
         }
 
-        if (countryCode != null) {
+        if (countryCode != null && invoice.getSubtotal() != null) {
             Map<String, Object> taxCalculation = taxService.calculateTax(invoice.getSubtotal(), countryCode);
-            Object taxAmountObj = taxCalculation.get("taxAmount");
-            Long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
-                            taxAmountObj instanceof Number ? ((Number) taxAmountObj).longValue() : 0L;
-            invoice.setTax(taxAmount);
-            invoice.setTaxDetails(taxCalculation);
-            invoice.setTotal(invoice.getSubtotal() + invoice.getTax());
-            invoice.setAmountDue(invoice.getTotal());
+            if (taxCalculation != null) {
+                Object taxAmountObj = taxCalculation.get("taxAmount");
+                Long taxAmount = taxAmountObj instanceof Long ? (Long) taxAmountObj : 
+                                taxAmountObj instanceof Number ? ((Number) taxAmountObj).longValue() : 0L;
+                invoice.setTax(taxAmount);
+                invoice.setTaxDetails(taxCalculation);
+                Long subtotal = invoice.getSubtotal();
+                invoice.setTotal(subtotal + taxAmount);
+                invoice.setAmountDue(invoice.getTotal());
+            }
         }
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
         for (InvoiceItem item : items) {
-            item.setInvoiceId(savedInvoice.getId());
-            invoiceItemRepository.save(item);
+            if (item != null) {
+                item.setInvoiceId(savedInvoice.getId());
+                invoiceItemRepository.save(item);
+            }
         }
 
         return savedInvoice;
@@ -141,21 +162,31 @@ public class InvoiceService {
 
     public Invoice finalizeInvoice(UUID id) {
         Invoice invoice = getInvoiceById(id);
-        invoice.setStatus(InvoiceStatus.OPEN);
-        return invoiceRepository.save(invoice);
+        if (invoice.getStatus() == InvoiceStatus.DRAFT) {
+            invoice.setStatus(InvoiceStatus.OPEN);
+            return invoiceRepository.save(invoice);
+        }
+        throw new ValidationException("Only DRAFT invoices can be finalized");
     }
 
     public Invoice markInvoiceAsPaid(UUID id) {
         Invoice invoice = getInvoiceById(id);
+        Long total = invoice.getTotal();
+        if (total == null) {
+            total = 0L;
+        }
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaidAt(Instant.now());
-        invoice.setAmountPaid(invoice.getTotal());
+        invoice.setAmountPaid(total);
         invoice.setAmountDue(0L);
         return invoiceRepository.save(invoice);
     }
 
     public Invoice voidInvoice(UUID id) {
         Invoice invoice = getInvoiceById(id);
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            throw new ValidationException("Paid invoices cannot be voided");
+        }
         invoice.setStatus(InvoiceStatus.VOID);
         return invoiceRepository.save(invoice);
     }

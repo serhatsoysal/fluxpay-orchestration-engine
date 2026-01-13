@@ -34,14 +34,18 @@ public class InvoiceController {
     public ResponseEntity<Invoice> createInvoice(@Valid @RequestBody CreateInvoiceRequest request) {
         List<InvoiceItem> items = new ArrayList<>();
         for (InvoiceItemRequest itemRequest : request.getItems()) {
-            InvoiceItem item = new InvoiceItem();
-            item.setPriceId(itemRequest.getPriceId());
-            item.setDescription(itemRequest.getDescription());
-            item.setQuantity(BigDecimal.valueOf(itemRequest.getQuantity()));
-            item.setUnitAmount(itemRequest.getUnitAmount());
-            item.setAmount(itemRequest.getAmount());
-            item.setIsProration(itemRequest.getIsProration());
-            items.add(item);
+            if (itemRequest != null) {
+                InvoiceItem item = new InvoiceItem();
+                item.setPriceId(itemRequest.getPriceId());
+                item.setDescription(itemRequest.getDescription());
+                if (itemRequest.getQuantity() != null) {
+                    item.setQuantity(BigDecimal.valueOf(itemRequest.getQuantity()));
+                }
+                item.setUnitAmount(itemRequest.getUnitAmount());
+                item.setAmount(itemRequest.getAmount());
+                item.setIsProration(itemRequest.getIsProration());
+                items.add(item);
+            }
         }
         
         Invoice invoice = invoiceService.createInvoiceWithValidation(

@@ -43,7 +43,7 @@ public class WebhookController {
     public ResponseEntity<WebhookEndpoint> getWebhook(@PathVariable UUID id) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         return webhookEndpointRepository.findById(id)
-                .filter(w -> w.getDeletedAt() == null && w.getTenantId().equals(tenantId))
+                .filter(w -> w.getDeletedAt() == null && w.getTenantId() != null && w.getTenantId().equals(tenantId))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -54,7 +54,7 @@ public class WebhookController {
             @Valid @RequestBody UpdateWebhookRequest request) {
         UUID tenantId = TenantContext.getCurrentTenantId();
         WebhookEndpoint webhook = webhookEndpointRepository.findById(id)
-                .filter(w -> w.getDeletedAt() == null && w.getTenantId().equals(tenantId))
+                .filter(w -> w.getDeletedAt() == null && w.getTenantId() != null && w.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new ResourceNotFoundException("Webhook", id));
         
         if (request.getSecret() != null && request.getSecret().length() < 16) {
